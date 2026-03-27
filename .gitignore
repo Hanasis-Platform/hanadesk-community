@@ -18,6 +18,8 @@ cert.pfx
 *svg
 *jpg
 sciter.dll
+/artifacts
+/sciter-js-sdk-*
 **pdb
 src/bridge_generated.rs
 src/bridge_generated.io.rs
