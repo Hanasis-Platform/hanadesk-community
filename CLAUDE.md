@@ -1,6 +1,7 @@
 # CLAUDE.md
 
-이 파일은 Claude Code (claude.ai/code)가 이 저장소의 코드를 다룰 때 참고하는 안내서입니다.
+이 파일은 Claude Code (claude.ai/code)가 이 저장소(HanaDesk Community)의 코드를 다룰 때 참고하는 안내서입니다.
+이 프로젝트는 RustDesk를 기반으로 한 커뮤니티 포크이며, 프로젝트 이름은 **HanaDesk Community**입니다.
 
 ## 언어 규칙
 - 모든 응답과 작성 내용은 **한국어**로 작성해야 합니다.
