@@ -1320,7 +1320,7 @@ fn get_install_info_with_subkey(subkey: String) -> (String, String, String, Stri
         "%ProgramData%\\Microsoft\\Windows\\Start Menu\\Programs\\{}",
         crate::get_app_name()
     );
-    let exe = format!("{}\\{}.exe", path, crate::get_app_name());
+    let exe = format!("{}\\{}.exe", path, env!("CARGO_PKG_NAME"));
     (subkey, path, start_menu, exe)
 }
 
