@@ -444,7 +444,7 @@ pub mod server {
         match ipc::connect(1000, postfix).await {
             Ok(mut stream) => {
                 let mut timer =
-                    crate::rustdesk_interval(tokio::time::interval(Duration::from_secs(1)));
+                    crate::hanadesk_interval(tokio::time::interval(Duration::from_secs(1)));
                 let mut nack = 0;
                 loop {
                     tokio::select! {
@@ -783,7 +783,7 @@ pub mod client {
                                     tokio::spawn(async move {
                                         let mut stream = Connection::new(stream);
                                         let postfix = postfix.to_owned();
-                                        let mut timer = crate::rustdesk_interval(tokio::time::interval(Duration::from_secs(1)));
+                                        let mut timer = crate::hanadesk_interval(tokio::time::interval(Duration::from_secs(1)));
                                         let mut nack = 0;
                                         let mut rx = rx_clone.lock().await;
                                         loop {
