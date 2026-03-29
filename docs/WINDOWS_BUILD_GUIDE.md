@@ -41,9 +41,10 @@ git checkout 120deac3062162151622ca4860575a33844ba10b
 $env:LOCAL_BUILD = "1"
 
 cd d:\Projects\HanaDeskCommunity\hanadesk-community
-d:\Projects\HanaDeskCommunity\vcpkg\vcpkg.exe install --triplet x64-windows-static --x-install-root="d:\Projects\HanaDeskCommunity\vcpkg\installed"
+d:\Projects\HanaDeskCommunity\vcpkg\vcpkg.exe install --triplet x64-windows-static --host-triplet x64-windows-static --x-install-root="d:\Projects\HanaDeskCommunity\vcpkg\installed"
 ```
 
+> **주의**: `--host-triplet x64-windows-static`을 반드시 함께 지정해야 FFmpeg가 설치됩니다.
 > **소요 시간**: 30~60분 (FFmpeg, aom 등 소스 빌드 포함). 최초 1회만 필요합니다.
 
 ### 2.3 Flutter 커스텀 엔진 교체 (최초 1회)
@@ -98,8 +99,10 @@ cd d:\Projects\HanaDeskCommunity\hanadesk-community
 
 | 모드 | 하드웨어 코덱 | 용도 | vcpkg FFmpeg 필요 |
 |------|-------------|------|-------------------|
-| `flutter` | 소프트웨어 코덱만 | 개발/테스트 | 아니오 (기본 의존성만) |
-| `flutter-full` | GPU 인코딩/디코딩 | 상용 배포 | **예** (FFmpeg, aom 등) |
+| `flutter` | 소프트웨어 코덱만 | 빠른 개발/테스트 | 아니오 (기본 의존성만) |
+| `flutter-full` | GPU 인코딩/디코딩 (NVENC, AMF, QSV) | **상용 배포** | **예** (FFmpeg, aom 등) |
+
+> `flutter-full`은 vcpkg 의존성 설치(2.2절) 완료 후 사용 가능합니다.
 
 ### 3.3 서버 빌드
 
@@ -185,10 +188,11 @@ cargo build  # ← stdint.h 에러 발생
 ### 6.2 `libavutil/pixfmt.h` 파일을 찾을 수 없음
 
 vcpkg에서 FFmpeg가 빌드되지 않았습니다. `flutter-full` 모드에만 필요합니다.
+`--host-triplet`을 반드시 함께 지정해야 합니다.
 
 ```powershell
 $env:LOCAL_BUILD = "1"
-d:\Projects\HanaDeskCommunity\vcpkg\vcpkg.exe install --triplet x64-windows-static --x-install-root="d:\Projects\HanaDeskCommunity\vcpkg\installed"
+d:\Projects\HanaDeskCommunity\vcpkg\vcpkg.exe install --triplet x64-windows-static --host-triplet x64-windows-static --x-install-root="d:\Projects\HanaDeskCommunity\vcpkg\installed"
 ```
 
 ### 6.3 aom 빌드 실패 (AVX2 관련)
@@ -196,15 +200,32 @@ d:\Projects\HanaDeskCommunity\vcpkg\vcpkg.exe install --triplet x64-windows-stat
 `LOCAL_BUILD` 환경변수가 설정되지 않았습니다. `build.bat`을 사용하면 자동 설정됩니다.
 수동 vcpkg install 시에는 `$env:LOCAL_BUILD = "1"`을 먼저 설정하세요.
 
-### 6.4 Bridge 파일이 없어서 빌드 실패
+### 6.4 CRT 링킹 충돌 (LNK2038: RuntimeLibrary 불일치)
+
+```
+'MT_StaticRelease' 값이 'MD_DynamicRelease' 값과 일치하지 않습니다.
+```
+
+`build.bat`의 `RUSTFLAGS`에 `-C target-feature=+crt-static`이 빠져 있습니다.
+이 플래그가 없으면 Rust는 동적 CRT(`/MD`)로 컴파일하고, vcpkg static 라이브러리는 정적 CRT(`/MT`)를 사용하여 충돌합니다.
+
+`build.bat`의 RUSTFLAGS 줄에 `-C target-feature=+crt-static`이 포함되어 있는지 확인하세요:
+
+```batch
+set "RUSTFLAGS=-C target-feature=+crt-static -A dead_code -A unused_imports ..."
+```
+
+> **참고**: 환경변수 `RUSTFLAGS`가 설정되면 `.cargo/config.toml`의 `rustflags`는 무시됩니다.
+
+### 6.5 Bridge 파일이 없어서 빌드 실패 (bridge_generated.rs)
 
 builder VM에서 bridge 파일을 복사해야 합니다. 2.4 절을 참고하세요.
 
-### 6.5 Flutter 엔진 미교체로 렌더링 이상
+### 6.6 Flutter 엔진 미교체로 렌더링 이상
 
 커스텀 Flutter 엔진이 교체되지 않았습니다. 2.3 절을 참고하세요.
 
-### 6.6 VCPKG_ROOT 관련 에러
+### 6.7 VCPKG_ROOT 관련 에러
 
 `build.bat`이 자동으로 `%~dp0..\vcpkg` (프로젝트 루트의 vcpkg)를 설정합니다.
 수동으로 사용할 때는 `$env:VCPKG_ROOT = "d:\Projects\HanaDeskCommunity\vcpkg"`를 설정하세요.
