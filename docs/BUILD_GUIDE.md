@@ -60,7 +60,7 @@ $env:Path += ";$env:USERPROFILE\.cargo\bin"
 $env:Path += ";d:\Projects\flutter\bin"
 
 # VCPKG
-$env:VCPKG_ROOT = "d:\Projects\vcpkg"
+$env:VCPKG_ROOT = "<프로젝트경로>\vcpkg"  # 예: d:\Projects\HanaDeskCommunity\vcpkg
 
 # libclang for bindgen
 $env:LIBCLANG_PATH = "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin"

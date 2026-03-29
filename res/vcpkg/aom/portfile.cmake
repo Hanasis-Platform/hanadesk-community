@@ -25,8 +25,7 @@ else()
         REF 10aece4157eb79315da205f39e19bf6ab3ee30d0 # 3.12.1
         PATCHES
             aom-uninitialized-pointer.diff
-            # aom-avx2.diff
-            # Can be dropped when https://bugs.chromium.org/p/aomedia/issues/detail?id=3029 is merged into the upstream
+            # aom-avx2.diff  # 3.9.1 전용
             aom-install.diff
     )
 endif()
@@ -42,10 +41,19 @@ if(VCPKG_TARGET_ARCHITECTURE STREQUAL "arm" AND VCPKG_TARGET_IS_LINUX)
   set(aom_target_cpu "-DENABLE_NEON=OFF")
 endif()
 
+# Workaround for MSVC 17.x AVX2 intrinsics compilation failure on aom 3.12.1
+# LOCAL_BUILD 환경변수가 설정된 경우에만 AVX2 비활성화 (CI에서는 정상 빌드됨)
+set(aom_avx2_fix "")
+if(DEFINED ENV{LOCAL_BUILD} AND VCPKG_TARGET_IS_WINDOWS AND NOT VCPKG_TARGET_IS_UWP)
+  message(STATUS "LOCAL_BUILD: disabling AVX2 for aom (MSVC compatibility workaround)")
+  set(aom_avx2_fix "-DENABLE_AVX2=OFF")
+endif()
+
 vcpkg_cmake_configure(
     SOURCE_PATH ${SOURCE_PATH}
     OPTIONS
         ${aom_target_cpu}
+        ${aom_avx2_fix}
         -DENABLE_DOCS=OFF
         -DENABLE_EXAMPLES=OFF
         -DENABLE_TESTDATA=OFF
