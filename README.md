@@ -1,11 +1,8 @@
-<p align="center">
-  <img src="res/logo-header.svg" alt="HanaDesk Community - Your remote desktop"><br>
-  <a href="docs/BUILD_GUIDE.md">빌드 가이드</a> •
-  <a href="#프로젝트-구조">프로젝트 구조</a> •
-  <a href="#스크린샷">스크린샷</a>
-</p>
-
 # HanaDesk Community
+
+<a href="docs/BUILD_GUIDE.md">빌드 가이드</a> •
+<a href="#프로젝트-구조">프로젝트 구조</a> •
+<a href="#스크린샷">스크린샷</a>
 
 [RustDesk](https://github.com/rustdesk/rustdesk) 기반의 커뮤니티 원격 데스크톱 솔루션입니다. Rust로 작성되었으며, 별도의 설정 없이 바로 사용할 수 있습니다.
 
