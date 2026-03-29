@@ -478,6 +478,14 @@ def build_flutter_windows(version, features, skip_portable_pack, skip_sign=False
         if not os.path.exists("target/release/libhanadesk.dll"):
             print("cargo build failed, please check rust source code.")
             exit(-1)
+    # client-mode는 관리자 권한 manifest, support-mode는 일반 사용자 manifest
+    manifest_src = 'flutter/windows/runner/runner.exe.manifest'
+    if 'client-mode' in features:
+        shutil.copy2('flutter/windows/runner/runner.exe.manifest.admin', manifest_src)
+        print('[MANIFEST] requireAdministrator (client-mode)')
+    elif 'support-mode' in features:
+        shutil.copy2('flutter/windows/runner/runner.exe.manifest.user', manifest_src)
+        print('[MANIFEST] asInvoker (support-mode)')
     os.chdir('flutter')
     system2('flutter build windows --release')
     os.chdir('..')
