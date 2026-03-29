@@ -2401,21 +2401,10 @@ class _AboutState extends State<_About> {
                     child: Row(
                   children: [
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Copyright © ${DateTime.now().toString().substring(0, 4)} Hanasis Platform.\nBased on RustDesk by Purslane Ltd.\n$license',
+                      child: Text(
+                            'Copyright © ${DateTime.now().toString().substring(0, 4)} Hanasis Co., Ltd.\n$license',
                             style: const TextStyle(color: Colors.white),
                           ),
-                          Text(
-                            translate('Slogan_tip'),
-                            style: TextStyle(
-                                fontWeight: FontWeight.w800,
-                                color: Colors.white),
-                          )
-                        ],
-                      ),
                     ),
                   ],
                 )),
