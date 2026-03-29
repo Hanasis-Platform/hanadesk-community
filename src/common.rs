@@ -139,12 +139,13 @@ pub fn global_clean() {}
 /// load_custom_client() 이후에 호출하여 feature flag가 custom.txt보다 우선하도록 한다.
 pub fn apply_build_mode() {
     // 서버 접속 기본값 (client-mode, support-mode 공통)
+    // 값은 .build.env 파일에서 build.rs를 통해 컴파일 시점에 주입됨
     #[cfg(any(feature = "client-mode", feature = "support-mode"))]
     {
         let mut overwrite = config::OVERWRITE_SETTINGS.write().unwrap();
-        overwrite.insert("custom-rendezvous-server".to_owned(), "hanadesk.hanaesp.com".to_owned());
-        overwrite.insert("relay-server".to_owned(), "hanadesk.hanaesp.com".to_owned());
-        overwrite.insert("key".to_owned(), "2wAoo7KvTd8RY5O07YA2wDabsDnQCw0EcHV2ecJBj0M=".to_owned());
+        overwrite.insert("custom-rendezvous-server".to_owned(), env!("RENDEZVOUS_SERVER").to_owned());
+        overwrite.insert("relay-server".to_owned(), env!("RELAY_SERVER").to_owned());
+        overwrite.insert("key".to_owned(), env!("SERVER_KEY").to_owned());
         drop(overwrite);
     }
 
@@ -154,7 +155,7 @@ pub fn apply_build_mode() {
         settings.insert("conn-type".to_owned(), "incoming".to_owned());
         settings.insert("disable-settings".to_owned(), "Y".to_owned());
         drop(settings);
-        *config::APP_NAME.write().unwrap() = "HanaDesk Community Client".to_owned();
+        *config::APP_NAME.write().unwrap() = env!("CLIENT_APP_NAME").to_owned();
     }
 
     #[cfg(feature = "support-mode")]
@@ -163,7 +164,7 @@ pub fn apply_build_mode() {
         settings.insert("conn-type".to_owned(), "outgoing".to_owned());
         settings.insert("disable-settings".to_owned(), "Y".to_owned());
         drop(settings);
-        *config::APP_NAME.write().unwrap() = "HanaDesk Community Support".to_owned();
+        *config::APP_NAME.write().unwrap() = env!("SUPPORT_APP_NAME").to_owned();
     }
 }
 
