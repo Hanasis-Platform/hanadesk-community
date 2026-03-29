@@ -50,6 +50,7 @@ fn initialize(app_dir: &str, custom_client_config: &str) {
     } else {
         crate::read_custom_client(custom_client_config);
     }
+    crate::common::apply_build_mode();
     #[cfg(target_os = "android")]
     {
         // flexi_logger can't work when android_logger initialized.
@@ -2997,6 +2998,7 @@ pub mod server_side {
             if !custom_client_config.is_empty() {
                 let custom_client_config: String = custom_client_config.into();
                 crate::read_custom_client(&custom_client_config);
+                crate::common::apply_build_mode();
             }
         }
         std::thread::spawn(move || start_server(true));

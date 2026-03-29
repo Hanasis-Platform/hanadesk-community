@@ -1,3 +1,7 @@
+// client-mode와 support-mode는 동시에 활성화할 수 없음
+#[cfg(all(feature = "client-mode", feature = "support-mode"))]
+compile_error!("Features 'client-mode' and 'support-mode' are mutually exclusive. Use only one.");
+
 mod keyboard;
 /// cbindgen:ignore
 pub mod platform;

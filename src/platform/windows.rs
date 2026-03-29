@@ -1988,6 +1988,7 @@ pub fn prepare_custom_client_update() -> ResultType<bool> {
             let is_custom_file_exists =
                 local_custom_file_path.exists() && local_custom_file_path.is_file();
             crate::load_custom_client();
+            crate::common::apply_build_mode();
 
             // Remove the copied custom.txt file
             allow_err!(fs::remove_file(&local_custom_file_path));

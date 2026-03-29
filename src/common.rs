@@ -133,6 +133,30 @@ pub fn global_init() -> bool {
 
 pub fn global_clean() {}
 
+/// 빌드 모드에 따라 HARD_SETTINGS와 APP_NAME을 설정한다.
+/// - client-mode: incoming 전용 (고객용, 원격 접속을 받기만 함)
+/// - support-mode: outgoing 전용 (지원용, 원격에 접속만 함)
+/// load_custom_client() 이후에 호출하여 feature flag가 custom.txt보다 우선하도록 한다.
+pub fn apply_build_mode() {
+    #[cfg(feature = "client-mode")]
+    {
+        config::HARD_SETTINGS
+            .write()
+            .unwrap()
+            .insert("conn-type".to_owned(), "incoming".to_owned());
+        *config::APP_NAME.write().unwrap() = "HanaDesk Community Client".to_owned();
+    }
+
+    #[cfg(feature = "support-mode")]
+    {
+        config::HARD_SETTINGS
+            .write()
+            .unwrap()
+            .insert("conn-type".to_owned(), "outgoing".to_owned());
+        *config::APP_NAME.write().unwrap() = "HanaDesk Community Support".to_owned();
+    }
+}
+
 #[inline]
 pub fn set_server_running(b: bool) {
     *SERVER_RUNNING.write().unwrap() = b;

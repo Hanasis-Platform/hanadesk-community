@@ -33,6 +33,16 @@ fn build_manifest() {
                 winapi::um::winnt::SUBLANG_ENGLISH_US,
             ))
             .set_manifest_file("res/manifest.xml");
+        #[cfg(feature = "client-mode")]
+        {
+            res.set("ProductName", "HanaDesk Community Client");
+            res.set("FileDescription", "HanaDesk Community Client Remote Desktop");
+        }
+        #[cfg(feature = "support-mode")]
+        {
+            res.set("ProductName", "HanaDesk Community Support");
+            res.set("FileDescription", "HanaDesk Community Support Remote Desktop");
+        }
         match res.compile() {
             Err(e) => {
                 write!(std::io::stderr(), "{}", e).unwrap();

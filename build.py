@@ -45,6 +45,34 @@ def system2(cmd):
         sys.exit(-1)
 
 
+SIGNABLE_EXTS = {'.exe', '.msi', '.dll', '.cat', '.sys'}
+# 프로젝트 루트의 codesign.js 경로 (build.py는 hanadesk-community/ 에서 실행됨)
+CODESIGN_JS = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'codesign.js')
+
+
+def sign_file(file_path):
+    """프로젝트 루트의 codesign.js를 호출하여 단일 파일에 코드서명한다."""
+    ext = os.path.splitext(file_path)[1].lower()
+    if ext not in SIGNABLE_EXTS:
+        return
+    system2(f'node "{CODESIGN_JS}" "{file_path}"')
+
+
+def sign_dir(dir_path):
+    """디렉토리 내 서명 대상 파일(.exe, .dll 등)을 모두 codesign.js로 코드서명한다."""
+    files_to_sign = []
+    for root, _dirs, files in os.walk(dir_path):
+        for f in files:
+            ext = os.path.splitext(f)[1].lower()
+            if ext in SIGNABLE_EXTS:
+                files_to_sign.append(os.path.join(root, f))
+    if files_to_sign:
+        # codesign.js는 여러 파일을 인자로 받을 수 있음
+        args = ' '.join(f'"{f}"' for f in files_to_sign)
+        system2(f'node "{CODESIGN_JS}" {args}')
+    print(f'[SIGN] {len(files_to_sign)} files signed in {dir_path}')
+
+
 def get_version():
     with open("Cargo.toml", encoding="utf-8") as fh:
         for line in fh:
@@ -144,6 +172,17 @@ def make_parser():
         "--package",
         type=str
     )
+    parser.add_argument(
+        '--extra-features',
+        default='',
+        help='Additional Cargo features, comma-separated (e.g. client-mode,support-mode)'
+    )
+    if windows:
+        parser.add_argument(
+            '--skip-sign',
+            action='store_true',
+            help='Skip code signing with signtool'
+        )
     if osx:
         parser.add_argument(
             '--screencapturekit',
@@ -284,6 +323,8 @@ def get_features(args):
     if osx:
         if args.screencapturekit:
             features.append('screencapturekit')
+    if args.extra_features:
+        features.extend(args.extra_features.split(','))
     print("features:", features)
     return features
 
@@ -431,7 +472,7 @@ def build_flutter_arch_manjaro(version, features):
     system2('HBB=`pwd`/.. FLUTTER=1 makepkg -f')
 
 
-def build_flutter_windows(version, features, skip_portable_pack):
+def build_flutter_windows(version, features, skip_portable_pack, skip_sign=False):
     if not skip_cargo:
         system2(f'cargo build --features {features} --lib --release')
         if not os.path.exists("target/release/librustdesk.dll"):
@@ -442,6 +483,10 @@ def build_flutter_windows(version, features, skip_portable_pack):
     os.chdir('..')
     shutil.copy2('target/release/deps/dylib_virtual_display.dll',
                  flutter_build_dir_2)
+    # Code signing (codesign.js 와 동일한 signtool 옵션)
+    if windows and not skip_sign:
+        print('[SIGN] Signing build output files...')
+        sign_dir(flutter_build_dir_2)
     if skip_portable_pack:
         return
     os.chdir('libs/portable')
@@ -492,20 +537,17 @@ def main():
         system2('cargo build --release')
         os.chdir('../../..')
 
+        skip_sign = getattr(args, 'skip_sign', False)
         if flutter:
-            build_flutter_windows(version, features, args.skip_portable_pack)
+            build_flutter_windows(version, features, args.skip_portable_pack, skip_sign)
             return
         system2('cargo build --release --features ' + features)
         # system2('upx.exe target/release/rustdesk.exe')
         system2('mv target/release/rustdesk.exe target/release/RustDesk.exe')
-        pa = os.environ.get('P')
-        if pa:
-            # https://certera.com/kb/tutorial-guide-for-safenet-authentication-client-for-code-signing/
-            system2(
-                f'signtool sign /a /v /p {pa} /debug /f .\\cert.pfx /t http://timestamp.digicert.com  '
-                'target\\release\\rustdesk.exe')
+        if not skip_sign:
+            sign_file('target\\release\\RustDesk.exe')
         else:
-            print('Not signed')
+            print('Signing skipped (--skip-sign)')
         system2(
             f'cp -rf target/release/RustDesk.exe {res_dir}')
         os.chdir('libs/portable')
