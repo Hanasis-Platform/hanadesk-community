@@ -140,19 +140,19 @@ pub fn global_clean() {}
 pub fn apply_build_mode() {
     #[cfg(feature = "client-mode")]
     {
-        config::HARD_SETTINGS
-            .write()
-            .unwrap()
-            .insert("conn-type".to_owned(), "incoming".to_owned());
+        let mut settings = config::HARD_SETTINGS.write().unwrap();
+        settings.insert("conn-type".to_owned(), "incoming".to_owned());
+        settings.insert("disable-settings".to_owned(), "Y".to_owned());
+        drop(settings);
         *config::APP_NAME.write().unwrap() = "HanaDesk Community Client".to_owned();
     }
 
     #[cfg(feature = "support-mode")]
     {
-        config::HARD_SETTINGS
-            .write()
-            .unwrap()
-            .insert("conn-type".to_owned(), "outgoing".to_owned());
+        let mut settings = config::HARD_SETTINGS.write().unwrap();
+        settings.insert("conn-type".to_owned(), "outgoing".to_owned());
+        settings.insert("disable-settings".to_owned(), "Y".to_owned());
+        drop(settings);
         *config::APP_NAME.write().unwrap() = "HanaDesk Community Support".to_owned();
     }
 }
