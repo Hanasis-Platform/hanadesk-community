@@ -3,6 +3,20 @@
 이 파일은 Claude Code (claude.ai/code)가 이 저장소(HanaDesk Community)의 코드를 다룰 때 참고하는 안내서입니다.
 이 프로젝트는 RustDesk를 기반으로 한 커뮤니티 포크이며, 프로젝트 이름은 **HanaDesk Community**입니다.
 
+## 보안 규칙 (필수)
+- **빌드 서버, VM, 원격 호스트의 접속 정보(IP, 호스트명, 포트, 사용자명, 비밀번호, SSH 키 등)를 절대로 코드, 문서, 커밋 메시지, PR 설명에 포함하지 않는다.**
+- **인증서, 시크릿, API 키, 토큰 등 민감 정보를 절대로 git에 커밋하거나 문서에 기록하지 않는다.**
+- 이 프로젝트는 GitHub 공개 저장소이므로, 위 규칙을 위반하면 보안 사고로 이어진다.
+- **절대 커밋 금지 파일**: `*.key`, `*.pem`, `*.crt`, `*.p12`, `*.jks`, `*.keystore`, `.env*`, `google-services.json`, `GoogleService-Info.plist`
+- 운영환경 설정값(서버 주소, DB 접속 정보, 릴레이 키 등)은 코드에 하드코딩하지 않고 환경 변수로 관리한다.
+
+## 커밋 및 라이선스 규칙 (필수)
+- AGPL-3.0 라이선스. 새 패키지 추가 시 `license = "AGPL-3.0"` 필수.
+- 저작권: `Hanasis Platform <platform@hanasis.com>`, 원본 저작자 `Purslane Ltd.` 함께 표기.
+- NOTICE 파일 유지: 서드파티 의존성 추가 시 반영.
+- libs/ 하위 오픈소스 문서(LICENSE, .github/ 등) 삭제/gitignore 금지.
+- IDE 설정, 빌드 결과물, *.sqlite3, 바이너리는 커밋 금지.
+
 ## 언어 규칙
 - 모든 응답과 작성 내용은 **한국어**로 작성해야 합니다.
 - 코드, 명령어, 파일 경로 등 기술적 용어는 원문 그대로 유지합니다.

@@ -1,0 +1,58 @@
+HanaDesk Community
+Copyright (c) 2025 Hanasis Platform <platform@hanasis.com>
+
+This product is a community fork of RustDesk, originally developed by
+Purslane Ltd. (https://rustdesk.com).
+
+================================================================================
+Original Project
+================================================================================
+
+RustDesk - Open Source Remote Desktop
+Copyright (c) 2020-2024 Purslane Ltd.
+License: GNU Affero General Public License v3.0 (AGPL-3.0)
+Source: https://github.com/rustdesk/rustdesk
+
+================================================================================
+Third-Party Libraries
+================================================================================
+
+libs/enigo
+  Description: Cross-platform keyboard/mouse simulation
+  Copyright (c) 2017 pythoneer (Dustin Bensing)
+  License: MIT
+  Source: https://github.com/enigo-rs/enigo
+
+libs/scrap
+  Description: Screen capture library
+  Copyright (c) Ram (quadrupleslap)
+  License: MIT
+  Source: https://github.com/nickmass/scrap
+
+libs/hbb_common
+  Description: Common library (video codec, config, network, protobuf,
+               file transfer utilities)
+  Copyright (c) open-trade (OpenTrade Solutions)
+  License: AGPL-3.0 (as part of RustDesk)
+  Source: https://github.com/rustdesk/hbb_common
+
+libs/clipboard
+  Description: Cross-platform clipboard implementation
+  License: AGPL-3.0 (as part of RustDesk)
+
+libs/virtual_display
+  Description: Virtual display driver utilities
+  License: AGPL-3.0 (as part of RustDesk)
+
+================================================================================
+Additional Notices
+================================================================================
+
+This software uses the following additional open source components.
+For a complete list of dependencies and their licenses, see Cargo.lock.
+
+- Flutter SDK (BSD-3-Clause) - https://flutter.dev
+- flutter_rust_bridge (MIT) - https://github.com/aspect-build/rules_js
+
+All modifications made by Hanasis Platform to the original RustDesk source
+code are released under the same AGPL-3.0 license.

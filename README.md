@@ -58,6 +58,20 @@ gh workflow run flutter-nightly.yml --ref hanadesk -R Hanasis-Platform/hanadesk-
 
 ![File Transfer](https://github.com/rustdesk/rustdesk/assets/28412477/39511ad3-aa9a-4f8c-8947-1cce286a46ad)
 
-## 원본 프로젝트
+## 라이선스
 
-이 프로젝트는 [RustDesk](https://github.com/rustdesk/rustdesk)를 기반으로 합니다. 원본 프로젝트의 라이선스를 따릅니다.
+이 프로젝트는 [GNU Affero General Public License v3.0 (AGPL-3.0)](./LICENCE)에 따라 라이선스됩니다.
+
+### 원본 프로젝트
+
+이 프로젝트는 [RustDesk](https://github.com/rustdesk/rustdesk) (Copyright © Purslane Ltd.)를 기반으로 한 커뮤니티 포크입니다.
+
+### AGPL-3.0 주요 의무사항
+
+- 이 소프트웨어를 수정하여 배포하거나 네트워크 서버에서 운영하는 경우, 수정된 소스 코드를 동일한 AGPL-3.0 라이선스로 공개해야 합니다.
+- 원본 저작권 고지 및 라이선스 전문을 유지해야 합니다.
+- 상세한 내용은 [LICENCE](./LICENCE) 파일 및 [NOTICE](./NOTICE) 파일을 참고하세요.
+
+### 서드파티 라이선스
+
+이 프로젝트에 포함된 서드파티 라이브러리의 라이선스는 [NOTICE](./NOTICE) 파일을 참고하세요.
