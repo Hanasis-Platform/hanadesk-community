@@ -1,8 +1,8 @@
 [package]
-name = "rustdesk-portable-packer"
+name = "hanadesk-portable-packer"
 version = "1.4.6"
 edition = "2021"
-description = "RustDesk Remote Desktop"
+description = "HanaDesk Community Remote Desktop"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -28,7 +28,7 @@ native-windows-gui = {version = "1.0", default-features = false, features = ["an
 [package.metadata.winres]
 LegalCopyright = "Copyright © 2025 Hanasis Platform. Based on RustDesk by Purslane Ltd. Licensed under AGPL-3.0."
 ProductName = "HanaDesk Community"
-OriginalFilename = "rustdesk.exe"
+OriginalFilename = "hanadesk.exe"
 FileDescription = "HanaDesk Community Remote Desktop"
 #ProductVersion = ""
 

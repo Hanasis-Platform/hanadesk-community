@@ -1,16 +1,16 @@
 [package]
-name = "rustdesk"
+name = "hanadesk"
 version = "1.4.6"
 authors = ["Hanasis Platform <platform@hanasis.com>"]
 edition = "2021"
 build= "build.rs"
 description = "HanaDesk Community Remote Desktop"
 license = "AGPL-3.0"
-default-run = "rustdesk"
+default-run = "hanadesk"
 rust-version = "1.75"
 
 [lib]
-name = "librustdesk"
+name = "libhanadesk"
 crate-type = ["cdylib", "staticlib", "rlib"]
 
 [[bin]]
@@ -219,7 +219,7 @@ libxdo-sys = { path = "libs/libxdo-sys-stub" }
 LegalCopyright = "Copyright © 2025 Hanasis Platform. Based on RustDesk by Purslane Ltd. Licensed under AGPL-3.0."
 ProductName = "HanaDesk Community"
 FileDescription = "HanaDesk Community Remote Desktop"
-OriginalFilename = "rustdesk.exe"
+OriginalFilename = "hanadesk.exe"
 
 [target.'cfg(target_os="windows")'.build-dependencies]
 winres = "0.1"

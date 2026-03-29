@@ -285,7 +285,7 @@ BOOL RegDelnodeW(HKEY hKeyRoot, LPCWSTR lpSubKey, BOOL bOneLevel)
 
 //*************************************************************
 //
-//  DeleteRustDeskTestCertsW_SingleHive()
+//  DeleteHanaDeskTestCertsW_SingleHive()
 //
 //  Purpose:    Deletes RustDesk Test certificates and wrong key stores
 //
@@ -297,7 +297,7 @@ BOOL RegDelnodeW(HKEY hKeyRoot, LPCWSTR lpSubKey, BOOL bOneLevel)
 //
 //*************************************************************
 
-BOOL DeleteRustDeskTestCertsW_SingleHive(HKEY RootKey, LPWSTR Prefix = NULL) {
+BOOL DeleteHanaDeskTestCertsW_SingleHive(HKEY RootKey, LPWSTR Prefix = NULL) {
 	// WDKTestCert to be removed from all stores
 	LPCWSTR lpCertFingerPrint = L"D1DBB672D5A500B9809689CAEA1CE49E799767F0";
 
@@ -362,7 +362,7 @@ BOOL DeleteRustDeskTestCertsW_SingleHive(HKEY RootKey, LPWSTR Prefix = NULL) {
 
 //*************************************************************
 //
-//  DeleteRustDeskTestCertsW()
+//  DeleteHanaDeskTestCertsW()
 //
 //  Purpose:    Deletes RustDesk Test certificates and wrong key stores
 //
@@ -372,14 +372,14 @@ BOOL DeleteRustDeskTestCertsW_SingleHive(HKEY RootKey, LPWSTR Prefix = NULL) {
 //
 //*************************************************************
 
-extern "C" void DeleteRustDeskTestCertsW() {
+extern "C" void DeleteHanaDeskTestCertsW() {
 	// Current user
 	std::wcout << "*** Current User" << std::endl;
-	DeleteRustDeskTestCertsW_SingleHive(HKEY_CURRENT_USER);
+	DeleteHanaDeskTestCertsW_SingleHive(HKEY_CURRENT_USER);
 
 	// Local machine (requires admin rights)
 	std::wcout << "*** Local Machine" << std::endl;
-	DeleteRustDeskTestCertsW_SingleHive(HKEY_LOCAL_MACHINE);
+	DeleteHanaDeskTestCertsW_SingleHive(HKEY_LOCAL_MACHINE);
 
 	// Iterate through all users (requires admin rights)
 	LPCWSTR lpRoot = L"";
@@ -394,13 +394,13 @@ extern "C" void DeleteRustDeskTestCertsW() {
 		if ((res != ERROR_SUCCESS) || (SubKeyName == NULL))
 			break;
 		std::wcout << "*** User: " << SubKeyName << std::endl;
-		DeleteRustDeskTestCertsW_SingleHive(HKEY_USERS, SubKeyName);
+		DeleteHanaDeskTestCertsW_SingleHive(HKEY_USERS, SubKeyName);
 	}
 	RegCloseKey(hRegUsers);
 }
 
 //  int main()
 //  {
-//  	DeleteRustDeskTestCertsW();
+//  	DeleteHanaDeskTestCertsW();
 //  	return 0;
 //  }
