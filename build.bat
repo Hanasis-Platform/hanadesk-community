@@ -24,8 +24,8 @@ set "PATH=%USERPROFILE%\.cargo\bin;%PATH%"
 :: Set libclang path for bindgen
 set "LIBCLANG_PATH=C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Tools\Llvm\x64\bin"
 
-:: Suppress non-critical warnings
-set "RUSTFLAGS=-A dead_code -A unused_imports -A unused_variables -A unused_mut -A deprecated"
+:: Static CRT linking (must match vcpkg x64-windows-static) + suppress non-critical warnings
+set "RUSTFLAGS=-C target-feature=+crt-static -A dead_code -A unused_imports -A unused_variables -A unused_mut -A deprecated"
 
 :: Add Flutter to PATH
 set "PATH=d:\Projects\flutter\bin;%PATH%"
