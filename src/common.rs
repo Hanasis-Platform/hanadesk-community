@@ -138,6 +138,16 @@ pub fn global_clean() {}
 /// - support-mode: outgoing 전용 (지원용, 원격에 접속만 함)
 /// load_custom_client() 이후에 호출하여 feature flag가 custom.txt보다 우선하도록 한다.
 pub fn apply_build_mode() {
+    // 서버 접속 기본값 (client-mode, support-mode 공통)
+    #[cfg(any(feature = "client-mode", feature = "support-mode"))]
+    {
+        let mut overwrite = config::OVERWRITE_SETTINGS.write().unwrap();
+        overwrite.insert("custom-rendezvous-server".to_owned(), "hanadesk.hanaesp.com".to_owned());
+        overwrite.insert("relay-server".to_owned(), "hanadesk.hanaesp.com".to_owned());
+        overwrite.insert("key".to_owned(), "2wAoo7KvTd8RY5O07YA2wDabsDnQCw0EcHV2ecJBj0M=".to_owned());
+        drop(overwrite);
+    }
+
     #[cfg(feature = "client-mode")]
     {
         let mut settings = config::HARD_SETTINGS.write().unwrap();
