@@ -138,9 +138,8 @@ pub fn global_clean() {}
 /// - support-mode: outgoing 전용 (지원용, 원격에 접속만 함)
 /// load_custom_client() 이후에 호출하여 feature flag가 custom.txt보다 우선하도록 한다.
 pub fn apply_build_mode() {
-    // 서버 접속 기본값 (client-mode, support-mode 공통)
+    // 서버 접속 기본값 (모든 에디션 공통)
     // 값은 .build.env 파일에서 build.rs를 통해 컴파일 시점에 주입됨
-    #[cfg(any(feature = "client-mode", feature = "support-mode"))]
     {
         let mut overwrite = config::OVERWRITE_SETTINGS.write().unwrap();
         overwrite.insert("custom-rendezvous-server".to_owned(), env!("RENDEZVOUS_SERVER").to_owned());
