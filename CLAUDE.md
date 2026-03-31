@@ -42,6 +42,34 @@
 - `cargo test` - Rust 테스트 실행
 - `cd flutter && flutter test` - Flutter 테스트 실행
 
+### 에디션 빌드 (Windows)
+- `build-all.bat` — 6개 에디션 인스톨러 일괄 빌드 (아래 표 참조)
+- `build.bat client` — Client 에디션 인스톨러 (incoming only)
+- `build.bat support` — Support 에디션 인스톨러 (outgoing only)
+- `build.bat flutter` — Standard 에디션 (flutter, 서명 포함, 인스톨러 없음)
+- `build.bat flutter-installer` — Standard 에디션 인스톨러
+
+| 출력 폴더 | 에디션 | 모드 |
+|-----------|--------|------|
+| `test-client/` | Client | incoming only |
+| `test-support/` | Support | outgoing only |
+| `test-standard/` | Standard | full |
+
+> **Note:** 모든 에디션은 `asInvoker` manifest를 사용한다. `requireAdministrator`는 서비스(SYSTEM)가
+> Connection Manager(--cm)를 사용자 세션에서 실행할 때 `os error 740`을 유발하여 사용 불가.
+> 원격 관리자 작업은 `SoftwareSASGeneration=1` 레지스트리 설정으로 대응한다.
+
+### 빌드 규칙: 코드 서명 (필수)
+- **빌드 결과물의 모든 `.exe`, `.dll`, `.msi` 파일은 반드시 코드 서명한다.**
+- 서명 도구: `signtool.exe` (Windows SDK)
+- 인증서: Windows 개인 인증서 저장소 (`/s my /a`)
+- 타임스탬프: `http://timestamp.digicert.com` (SHA256, RFC3161)
+- 서명 명령: `signtool sign /s my /tr http://timestamp.digicert.com /fd sha256 /td sha256 /a "<파일>"`
+- `build.py`의 `sign_dir()` — Flutter 빌드 출력 폴더 내 모든 exe/dll 자동 서명
+- `build-all.bat` — 인스톨러(.exe) 패킹 후 추가 서명
+- `codesign.js` — Node.js 기반 서명 스크립트 (Electron Builder 호환)
+- **서명 없이 배포하지 않는다.**
+
 ### 플랫폼별 빌드 스크립트
 - `flutter/build_android.sh` - Android 빌드 스크립트
 - `flutter/build_ios.sh` - iOS 빌드 스크립트

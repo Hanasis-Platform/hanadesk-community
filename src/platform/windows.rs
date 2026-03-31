@@ -1181,6 +1181,19 @@ pub fn lock_screen() {
 
 const IS1: &str = "{54E86BC2-6C85-41F3-A9EB-1A94AC9B1F93}_is1";
 
+/// Windows service name (no spaces allowed in service ID)
+fn get_service_name() -> String {
+    crate::get_app_name().replace(" ", "")
+}
+
+/// Actual exe filename on disk (e.g. "hanadesk.exe"), not "{APP_NAME}.exe"
+fn get_exe_filename() -> String {
+    std::env::current_exe()
+        .ok()
+        .and_then(|p| p.file_name().map(|f| f.to_string_lossy().to_string()))
+        .unwrap_or_else(|| "hanadesk.exe".to_string())
+}
+
 fn get_subkey(name: &str, wow: bool) -> String {
     let tmp = format!(
         "HKEY_LOCAL_MACHINE\\Software\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\{}",
@@ -1443,6 +1456,9 @@ fn get_after_install(
 }
 
 pub fn install_me(options: &str, path: String, silent: bool, debug: bool) -> ResultType<()> {
+    log::info!("install_me called: options={}, path={}, silent={}, debug={}", options, &path, silent, debug);
+    // Ensure service will be created during installation
+    Config::set_option("stop-service".into(), "".into());
     let uninstall_str = get_uninstall(false, false);
     let mut path = path.trim_end_matches('\\').to_owned();
     let (subkey, _path, start_menu, exe) = get_default_install_info();
@@ -1595,20 +1611,20 @@ copy /Y \"{tmp_path}\\{app_name} Tray.lnk\" \"%PROGRAMDATA%\\Microsoft\\Windows\
 chcp 65001
 md \"{path}\"
 {copy_exe}
-reg add {subkey} /f
-reg add {subkey} /f /v DisplayIcon /t REG_SZ /d \"{display_icon}\"
-reg add {subkey} /f /v DisplayName /t REG_SZ /d \"{app_name}\"
-reg add {subkey} /f /v DisplayVersion /t REG_SZ /d \"{version}\"
-reg add {subkey} /f /v Version /t REG_SZ /d \"{version}\"
-reg add {subkey} /f /v BuildDate /t REG_SZ /d \"{build_date}\"
-reg add {subkey} /f /v InstallLocation /t REG_SZ /d \"{path}\"
-reg add {subkey} /f /v Publisher /t REG_SZ /d \"{app_name}\"
-reg add {subkey} /f /v VersionMajor /t REG_DWORD /d {version_major}
-reg add {subkey} /f /v VersionMinor /t REG_DWORD /d {version_minor}
-reg add {subkey} /f /v VersionBuild /t REG_DWORD /d {version_build}
-reg add {subkey} /f /v UninstallString /t REG_SZ /d \"\\\"{exe}\\\" --uninstall\"
-reg add {subkey} /f /v EstimatedSize /t REG_DWORD /d {size}
-reg add {subkey} /f /v WindowsInstaller /t REG_DWORD /d 0
+reg add \"{subkey}\" /f
+reg add \"{subkey}\" /f /v DisplayIcon /t REG_SZ /d \"{display_icon}\"
+reg add \"{subkey}\" /f /v DisplayName /t REG_SZ /d \"{app_name}\"
+reg add \"{subkey}\" /f /v DisplayVersion /t REG_SZ /d \"{version}\"
+reg add \"{subkey}\" /f /v Version /t REG_SZ /d \"{version}\"
+reg add \"{subkey}\" /f /v BuildDate /t REG_SZ /d \"{build_date}\"
+reg add \"{subkey}\" /f /v InstallLocation /t REG_SZ /d \"{path}\"
+reg add \"{subkey}\" /f /v Publisher /t REG_SZ /d \"{app_name}\"
+reg add \"{subkey}\" /f /v VersionMajor /t REG_DWORD /d {version_major}
+reg add \"{subkey}\" /f /v VersionMinor /t REG_DWORD /d {version_minor}
+reg add \"{subkey}\" /f /v VersionBuild /t REG_DWORD /d {version_build}
+reg add \"{subkey}\" /f /v UninstallString /t REG_SZ /d \"\\\"{exe}\\\" --uninstall\"
+reg add \"{subkey}\" /f /v EstimatedSize /t REG_DWORD /d {size}
+reg add \"{subkey}\" /f /v WindowsInstaller /t REG_DWORD /d 0
 cscript \"{mk_shortcut}\"
 cscript \"{uninstall_shortcut}\"
 {tray_shortcuts}
@@ -1654,6 +1670,7 @@ pub fn run_before_uninstall() -> ResultType<()> {
 
 fn get_before_uninstall(kill_self: bool) -> String {
     let app_name = crate::get_app_name();
+    let svc_name = get_service_name();
     let ext = app_name.to_lowercase();
     let filter = if kill_self {
         "".to_string()
@@ -1663,15 +1680,16 @@ fn get_before_uninstall(kill_self: bool) -> String {
     format!(
         "
     chcp 65001
-    sc stop {app_name}
-    sc delete {app_name}
+    sc stop {svc_name}
+    sc delete {svc_name}
     taskkill /F /IM {broker_exe}
-    taskkill /F /IM {app_name}.exe{filter}
+    taskkill /F /IM {exe_name}{filter}
     reg delete HKEY_CLASSES_ROOT\\.{ext} /f
     reg delete HKEY_CLASSES_ROOT\\{ext} /f
     netsh advfirewall firewall delete rule name=\"{app_name} Service\"
     ",
         broker_exe = WIN_TOPMOST_INJECTED_PROCESS_EXE,
+        exe_name = get_exe_filename(),
     )
 }
 
@@ -1709,7 +1727,7 @@ fn get_uninstall(kill_self: bool, uninstall_printer: bool) -> String {
     {before_uninstall}
     {uninstall_printer_cmd}
     {uninstall_cert_cmd}
-    reg delete {subkey} /f
+    reg delete \"{subkey}\" /f
     {uninstall_amyuni_idd}
     if exist \"{path}\" rd /s /q \"{path}\"
     if exist \"{start_menu}\" rd /s /q \"{start_menu}\"
@@ -2929,14 +2947,16 @@ pub fn uninstall_service(show_new_window: bool, _: bool) -> bool {
     let cmds = format!(
         "
     chcp 65001
-    sc stop {app_name}
-    sc delete {app_name}
+    sc stop {svc_name}
+    sc delete {svc_name}
     if exist \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\{app_name} Tray.lnk\" del /f /q \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\{app_name} Tray.lnk\"
     taskkill /F /IM {broker_exe}
-    taskkill /F /IM {app_name}.exe{filter}
+    taskkill /F /IM {exe_name}{filter}
     ",
         app_name = crate::get_app_name(),
+        svc_name = get_service_name(),
         broker_exe = WIN_TOPMOST_INJECTED_PROCESS_EXE,
+        exe_name = get_exe_filename(),
     );
     if let Err(err) = run_cmds(cmds, false, "uninstall") {
         Config::set_option("stop-service".into(), "".into());
@@ -2959,7 +2979,7 @@ pub fn install_service() -> bool {
     let cmds = format!(
         "
 chcp 65001
-taskkill /F /IM {app_name}.exe{filter}
+taskkill /F /IM {exe_name}{filter}
 cscript \"{tray_shortcut}\"
 copy /Y \"{tmp_path}\\{app_name} Tray.lnk\" \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\\"
 {import_config}
@@ -2967,6 +2987,7 @@ copy /Y \"{tmp_path}\\{app_name} Tray.lnk\" \"%PROGRAMDATA%\\Microsoft\\Windows\
 if exist \"{tray_shortcut}\" del /f /q \"{tray_shortcut}\"
     ",
         app_name = crate::get_app_name(),
+        exe_name = get_exe_filename(),
         import_config = get_import_config(&exe),
         create_service = get_create_service(&exe),
     );
@@ -3027,7 +3048,7 @@ pub fn update_me(debug: bool) -> ResultType<()> {
         bail!("{} is not installed.", &app_name);
     }
 
-    let app_exe_name = &format!("{}.exe", &app_name);
+    let app_exe_name = &get_exe_filename();
     let main_window_pids =
         crate::platform::get_pids_of_process_with_args::<_, &str>(&app_exe_name, &[]);
     let main_window_sessions = main_window_pids
@@ -3080,20 +3101,20 @@ pub fn update_me(debug: bool) -> ResultType<()> {
             "".to_string()
         } else {
             format!(
-                "reg add {} /f /v DisplayIcon /t REG_SZ /d \"{}\"",
+                "reg add \"{}\" /f /v DisplayIcon /t REG_SZ /d \"{}\"",
                 subkey, display_icon
             )
         };
         format!(
             "
 {reg_display_icon}
-reg add {subkey} /f /v DisplayVersion /t REG_SZ /d \"{version}\"
-reg add {subkey} /f /v Version /t REG_SZ /d \"{version}\"
-reg add {subkey} /f /v BuildDate /t REG_SZ /d \"{build_date}\"
-reg add {subkey} /f /v VersionMajor /t REG_DWORD /d {version_major}
-reg add {subkey} /f /v VersionMinor /t REG_DWORD /d {version_minor}
-reg add {subkey} /f /v VersionBuild /t REG_DWORD /d {version_build}
-reg add {subkey} /f /v EstimatedSize /t REG_DWORD /d {size}
+reg add \"{subkey}\" /f /v DisplayVersion /t REG_SZ /d \"{version}\"
+reg add \"{subkey}\" /f /v Version /t REG_SZ /d \"{version}\"
+reg add \"{subkey}\" /f /v BuildDate /t REG_SZ /d \"{build_date}\"
+reg add \"{subkey}\" /f /v VersionMajor /t REG_DWORD /d {version_major}
+reg add \"{subkey}\" /f /v VersionMinor /t REG_DWORD /d {version_minor}
+reg add \"{subkey}\" /f /v VersionBuild /t REG_DWORD /d {version_build}
+reg add \"{subkey}\" /f /v EstimatedSize /t REG_DWORD /d {size}
         "
         )
     }
@@ -3130,7 +3151,7 @@ reg add {subkey} /f /v EstimatedSize /t REG_DWORD /d {size}
 
     let filter = format!(" /FI \"PID ne {}\"", get_current_pid());
     let restore_service_cmd = if is_service_running {
-        format!("sc start {}", &app_name)
+        format!("sc start {}", get_service_name())
     } else {
         "".to_owned()
     };
@@ -3162,8 +3183,8 @@ reg add {subkey} /f /v EstimatedSize /t REG_DWORD /d {size}
     let cmds = format!(
         "
 chcp 65001
-sc stop {app_name}
-taskkill /F /IM {app_name}.exe{filter}
+sc stop {svc_name}
+taskkill /F /IM {exe_name}{filter}
 {reg_cmd}
 {copy_exe}
 {rename_exe}
@@ -3173,7 +3194,8 @@ taskkill /F /IM {app_name}.exe{filter}
 {install_printer_cmd}
 {sleep}
     ",
-        app_name = app_name,
+        exe_name = get_exe_filename(),
+        svc_name = get_service_name(),
         copy_exe = copy_exe_cmd(&src_exe, &exe, &path)?,
         rename_exe = rename_exe_cmd(&src_exe, &path)?,
         remove_meta_toml = remove_meta_toml_cmd(is_msi.unwrap_or(true), &path),
@@ -3447,14 +3469,15 @@ fn get_import_config(exe: &str) -> String {
         return "".to_string();
     }
     format!("
-sc stop {app_name}
-sc delete {app_name}
-sc create {app_name} binpath= \"\\\"{exe}\\\" --import-config \\\"{config_path}\\\"\" start= auto DisplayName= \"{app_name} Service\"
-sc start {app_name}
-sc stop {app_name}
-sc delete {app_name}
+sc stop {svc_name}
+sc delete {svc_name}
+sc create {svc_name} binpath= \"\\\"{exe}\\\" --import-config \\\"{config_path}\\\"\" start= auto DisplayName= \"{app_name} Service\"
+sc start {svc_name}
+sc stop {svc_name}
+sc delete {svc_name}
 ",
     app_name = crate::get_app_name(),
+    svc_name = get_service_name(),
     config_path=Config::file().to_str().unwrap_or(""),
 )
 }
@@ -3470,10 +3493,11 @@ if exist \"%PROGRAMDATA%\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\{ap
 ", app_name = crate::get_app_name())
     } else {
         format!("
-sc create {app_name} binpath= \"\\\"{exe}\\\" --service\" start= auto DisplayName= \"{app_name} Service\"
-sc start {app_name}
+sc create {svc_name} binpath= \"\\\"{exe}\\\" --service\" start= auto DisplayName= \"{app_name} Service\"
+sc start {svc_name}
 ",
-    app_name = crate::get_app_name())
+    app_name = crate::get_app_name(),
+    svc_name = get_service_name())
     }
 }
 

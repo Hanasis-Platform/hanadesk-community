@@ -984,19 +984,23 @@ pub fn check_software_update() {
     }
 }
 
-// No need to check `danger_accept_invalid_cert` for now.
-// Because the url is always `https://api.rustdesk.com/version/latest`.
+/// Check for software updates via GitHub Releases API.
 #[tokio::main(flavor = "current_thread")]
 pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
-    let (request, url) =
-        hbb_common::version_check_request(hbb_common::VER_TYPE_RUSTDESK_CLIENT.to_string());
+    let url = hbb_common::GITHUB_RELEASES_API_URL;
     let proxy_conf = Config::get_socks();
-    let tls_url = get_url_for_tls(&url, &proxy_conf);
+    let tls_url = get_url_for_tls(url, &proxy_conf);
     let tls_type = get_cached_tls_type(tls_url);
     let is_tls_not_cached = tls_type.is_none();
     let tls_type = tls_type.unwrap_or(TlsType::Rustls);
     let client = create_http_client_async(tls_type, false);
-    let latest_release_response = match client.post(&url).json(&request).send().await {
+    let latest_release_response = match client
+        .get(url)
+        .header("User-Agent", "HanaDeskCommunity")
+        .header("Accept", "application/vnd.github+json")
+        .send()
+        .await
+    {
         Ok(resp) => {
             upsert_tls_cache(tls_url, tls_type, false);
             resp
@@ -1005,7 +1009,12 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
             if is_tls_not_cached && err.is_request() {
                 let tls_type = TlsType::NativeTls;
                 let client = create_http_client_async(tls_type, false);
-                let resp = client.post(&url).json(&request).send().await?;
+                let resp = client
+                    .get(url)
+                    .header("User-Agent", "HanaDeskCommunity")
+                    .header("Accept", "application/vnd.github+json")
+                    .send()
+                    .await?;
                 upsert_tls_cache(tls_url, tls_type, false);
                 resp
             } else {
@@ -1014,11 +1023,11 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
         }
     };
     let bytes = latest_release_response.bytes().await?;
-    let resp: hbb_common::VersionCheckResponse = serde_json::from_slice(&bytes)?;
-    let response_url = resp.url;
-    let latest_release_version = response_url.rsplit('/').next().unwrap_or_default();
+    let release: hbb_common::GitHubRelease = serde_json::from_slice(&bytes)?;
+    let latest_version = release.tag_name.trim_start_matches('v');
+    let response_url = release.html_url;
 
-    if get_version_number(&latest_release_version) > get_version_number(crate::VERSION) {
+    if get_version_number(latest_version) > get_version_number(crate::VERSION) {
         #[cfg(feature = "flutter")]
         {
             let mut m = HashMap::new();

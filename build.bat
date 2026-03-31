@@ -34,14 +34,38 @@ set "PATH=d:\Projects\flutter\bin;%PATH%"
 set "MODE=%1"
 if "%MODE%"=="" set "MODE=debug"
 
+if "%MODE%"=="client" goto :client
+if "%MODE%"=="support" goto :support
 if "%MODE%"=="flutter" goto :flutter
+if "%MODE%"=="flutter-installer" goto :flutter_installer
 if "%MODE%"=="flutter-full" goto :flutter_full
 if "%MODE%"=="release" goto :release
 goto :debug
 
+:client
+echo [BUILD] Flutter CLIENT mode (incoming only, admin manifest)...
+python build.py --flutter --extra-features client-mode --portable --admin
+if !errorlevel! neq 0 goto :check
+for /f "tokens=3 delims= " %%V in ('findstr /b "version" Cargo.toml') do set "VER=%%~V"
+signtool sign /s my /tr http://timestamp.digicert.com /fd sha256 /td sha256 /a "hanadesk-!VER!-install.exe"
+if not exist "%~dp0..\test-client-admin" mkdir "%~dp0..\test-client-admin"
+copy /y "hanadesk-!VER!-install.exe" "%~dp0..\test-client-admin\HanaDeskCommunityClient-!VER!-install.exe" >nul
+echo [OK] test-client-admin\HanaDeskCommunityClient-!VER!-install.exe
+goto :check
+
+:support
+echo [BUILD] Flutter SUPPORT mode (outgoing only, admin manifest)...
+python build.py --flutter --extra-features support-mode --portable --admin
+goto :check
+
 :flutter
-echo [BUILD] Flutter mode...
+echo [BUILD] Flutter mode (default, no mode restriction)...
 python build.py --flutter --skip-portable-pack
+goto :check
+
+:flutter_installer
+echo [BUILD] Flutter mode + installer...
+python build.py --flutter --portable
 goto :check
 
 :flutter_full
@@ -52,6 +76,11 @@ goto :check
 :release
 echo [BUILD] Rust release mode...
 cargo build --release
+if !errorlevel! neq 0 goto :check
+echo [SIGN] Signing release binaries...
+for %%F in (target\release\*.exe target\release\*.dll) do (
+    signtool sign /s my /tr http://timestamp.digicert.com /fd sha256 /td sha256 /a "%%F" 2>nul && echo [SIGN] %%F
+)
 goto :check
 
 :debug

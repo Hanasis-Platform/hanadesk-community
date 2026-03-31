@@ -106,9 +106,10 @@ pub fn goto_install() {
 pub fn install_me(_options: String, _path: String, _silent: bool, _debug: bool) {
     #[cfg(windows)]
     std::thread::spawn(move || {
-        allow_err!(crate::platform::windows::install_me(
-            &_options, _path, _silent, _debug
-        ));
+        match crate::platform::windows::install_me(&_options, _path, _silent, _debug) {
+            Ok(_) => log::info!("install_me succeeded"),
+            Err(e) => log::error!("install_me failed: {}", e),
+        }
         std::process::exit(0);
     });
 }

@@ -179,6 +179,12 @@ def make_parser():
     )
     if windows:
         parser.add_argument(
+            '--admin',
+            action='store_true',
+            help='Build with requireAdministrator manifest (UAC elevation)'
+        )
+    if windows:
+        parser.add_argument(
             '--skip-sign',
             action='store_true',
             help='Skip code signing with signtool'
@@ -472,20 +478,29 @@ def build_flutter_arch_manjaro(version, features):
     system2('HBB=`pwd`/.. FLUTTER=1 makepkg -f')
 
 
-def build_flutter_windows(version, features, skip_portable_pack, skip_sign=False):
+def build_flutter_windows(version, features, skip_portable_pack, skip_sign=False, admin=False):
     if not skip_cargo:
         system2(f'cargo build --features {features} --lib --release')
         if not os.path.exists("target/release/libhanadesk.dll"):
             print("cargo build failed, please check rust source code.")
             exit(-1)
-    # client-mode는 관리자 권한 manifest, support-mode는 일반 사용자 manifest
+    # Always use asInvoker manifest.
+    # requireAdministrator causes os error 740 when the service (SYSTEM) tries to
+    # launch the Connection Manager (--cm) in user sessions.
+    # Remote admin tasks are handled via SoftwareSASGeneration=1 registry setting.
     manifest_src = 'flutter/windows/runner/runner.exe.manifest'
-    if 'client-mode' in features:
-        shutil.copy2('flutter/windows/runner/runner.exe.manifest.admin', manifest_src)
-        print('[MANIFEST] requireAdministrator (client-mode)')
-    elif 'support-mode' in features:
-        shutil.copy2('flutter/windows/runner/runner.exe.manifest.user', manifest_src)
-        print('[MANIFEST] asInvoker (support-mode)')
+    manifest_new = 'flutter/windows/runner/runner.exe.manifest.user'
+    # Only clear Flutter cache if manifest content actually changed
+    import filecmp
+    if os.path.exists(manifest_src) and os.path.exists(manifest_new) and filecmp.cmp(manifest_src, manifest_new, shallow=False):
+        print('[MANIFEST] asInvoker (unchanged, skip cache clear)')
+    else:
+        shutil.copy2(manifest_new, manifest_src)
+        print('[MANIFEST] asInvoker (updated)')
+        build_cache = 'flutter/build/windows'
+        if os.path.exists(build_cache):
+            shutil.rmtree(build_cache)
+            print('[CLEAN] Flutter Windows build cache cleared')
     os.chdir('flutter')
     system2('flutter build windows --release')
     os.chdir('..')
@@ -510,7 +525,10 @@ def build_flutter_windows(version, features, skip_portable_pack, skip_sign=False
                   './hanadesk_portable.exe')
     print(
         f'output location: {os.path.abspath(os.curdir)}/hanadesk_portable.exe')
-    os.rename('./hanadesk_portable.exe', f'./hanadesk-{version}-install.exe')
+    installer_name = f'./hanadesk-{version}-install.exe'
+    if os.path.exists(installer_name):
+        os.remove(installer_name)
+    os.rename('./hanadesk_portable.exe', installer_name)
     print(
         f'output location: {os.path.abspath(os.curdir)}/hanadesk-{version}-install.exe')
 
@@ -546,8 +564,9 @@ def main():
         os.chdir('../../..')
 
         skip_sign = getattr(args, 'skip_sign', False)
+        admin = getattr(args, 'admin', False)
         if flutter:
-            build_flutter_windows(version, features, args.skip_portable_pack, skip_sign)
+            build_flutter_windows(version, features, args.skip_portable_pack, skip_sign, admin)
             return
         system2('cargo build --release --features ' + features)
         # system2('upx.exe target/release/hanadesk.exe')

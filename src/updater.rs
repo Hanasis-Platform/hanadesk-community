@@ -132,18 +132,19 @@ fn check_update(manually: bool) -> ResultType<()> {
     if update_url.is_empty() {
         log::debug!("No update available.");
     } else {
-        let download_url = update_url.replace("tag", "download");
-        let version = download_url.split('/').last().unwrap_or_default();
+        // update_url is GitHub html_url: .../releases/tag/<version>
+        let version = update_url.rsplit('/').next().unwrap_or_default();
+        let download_base = update_url.replace("/tag/", "/download/");
         #[cfg(target_os = "windows")]
         let download_url = if cfg!(feature = "flutter") {
             format!(
-                "{}/rustdesk-{}-x86_64.{}",
-                download_url,
+                "{}/hanadesk-community-{}-x86_64.{}",
+                download_base,
                 version,
                 if update_msi { "msi" } else { "exe" }
             )
         } else {
-            format!("{}/rustdesk-{}-x86-sciter.exe", download_url, version)
+            format!("{}/hanadesk-community-{}-x86_64.exe", download_base, version)
         };
         log::debug!("New version available: {}", &version);
         let client = create_http_client_with_url(&download_url);
