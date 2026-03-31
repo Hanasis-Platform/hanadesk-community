@@ -132,19 +132,29 @@ fn check_update(manually: bool) -> ResultType<()> {
     if update_url.is_empty() {
         log::debug!("No update available.");
     } else {
-        // update_url is GitHub html_url: .../releases/tag/<version>
-        let version = update_url.rsplit('/').next().unwrap_or_default();
+        // update_url is GitHub html_url: .../releases/tag/v1.4.7
+        let version = update_url.rsplit('/').next().unwrap_or_default().trim_start_matches('v');
         let download_base = update_url.replace("/tag/", "/download/");
         #[cfg(target_os = "windows")]
-        let download_url = if cfg!(feature = "flutter") {
+        let download_url = {
+            // 에디션별 인스톨러 파일명 결정
+            #[cfg(feature = "client-mode")]
+            let edition = "Client";
+            #[cfg(feature = "support-mode")]
+            let edition = "Support";
+            #[cfg(not(any(feature = "client-mode", feature = "support-mode")))]
+            let edition = "";
+
+            let edition_suffix = if edition.is_empty() {
+                "".to_owned()
+            } else {
+                edition.to_owned()
+            };
+            let ext = if update_msi { "msi" } else { "exe" };
             format!(
-                "{}/hanadesk-community-{}-x86_64.{}",
-                download_base,
-                version,
-                if update_msi { "msi" } else { "exe" }
+                "{}/HanaDeskCommunity{}-{}-install.{}",
+                download_base, edition_suffix, version, ext
             )
-        } else {
-            format!("{}/hanadesk-community-{}-x86_64.exe", download_base, version)
         };
         log::debug!("New version available: {}", &version);
         let client = create_http_client_with_url(&download_url);

@@ -12,7 +12,9 @@ final _isExtracting = false.obs;
 void handleUpdate(String releasePageUrl) {
   _isExtracting.value = false;
   String downloadUrl = releasePageUrl.replaceAll('tag', 'download');
+  // tag에서 버전 추출 (v1.4.7 → 1.4.7, 파일명에 v 접두사 없음)
   String version = downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1);
+  String fileVersion = version.startsWith('v') ? version.substring(1) : version;
   final String downloadFile =
       bind.mainGetCommonSync(key: 'download-file-$version');
   if (downloadFile.startsWith('error:')) {

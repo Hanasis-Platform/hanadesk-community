@@ -2779,25 +2779,40 @@ pub fn main_get_common(key: String) -> String {
                 }
             }
         } else if key.starts_with("download-file-") {
-            let _version = key.replace("download-file-", "");
+            let _version = key.replace("download-file-", "").trim_start_matches('v').to_owned();
             #[cfg(target_os = "windows")]
-            return match (
-                crate::platform::windows::is_msi_installed(),
-                crate::common::is_custom_client(),
-            ) {
-                (Ok(true), false) => format!("rustdesk-{_version}-x86_64.msi"),
-                (Ok(true), true) | (Ok(false), _) => format!("rustdesk-{_version}-x86_64.exe"),
-                (Err(e), _) => {
-                    log::error!("Failed to check if is msi: {}", e);
-                    format!("error:update-failed-check-msi-tip")
-                }
-            };
+            {
+                // 에디션별 인스톨러 파일명 결정
+                #[cfg(feature = "client-mode")]
+                let edition = "Client";
+                #[cfg(feature = "support-mode")]
+                let edition = "Support";
+                #[cfg(not(any(feature = "client-mode", feature = "support-mode")))]
+                let edition = "";
+
+                let ext = match crate::platform::windows::is_msi_installed() {
+                    Ok(true) => "msi",
+                    Ok(false) => "exe",
+                    Err(e) => {
+                        log::error!("Failed to check if is msi: {}", e);
+                        return format!("error:update-failed-check-msi-tip");
+                    }
+                };
+                return format!("HanaDeskCommunity{edition}-{_version}-install.{ext}");
+            }
             #[cfg(target_os = "macos")]
             {
+                #[cfg(feature = "client-mode")]
+                let edition = "Client";
+                #[cfg(feature = "support-mode")]
+                let edition = "Support";
+                #[cfg(not(any(feature = "client-mode", feature = "support-mode")))]
+                let edition = "";
+
                 return if cfg!(target_arch = "x86_64") {
-                    format!("rustdesk-{_version}-x86_64.dmg")
+                    format!("HanaDeskCommunity{edition}-{_version}-x86_64.dmg")
                 } else if cfg!(target_arch = "aarch64") {
-                    format!("rustdesk-{_version}-aarch64.dmg")
+                    format!("HanaDeskCommunity{edition}-{_version}-aarch64.dmg")
                 } else {
                     "error:unsupported".to_owned()
                 };

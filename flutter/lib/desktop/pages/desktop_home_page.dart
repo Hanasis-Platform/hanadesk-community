@@ -430,13 +430,17 @@ class _DesktopHomePageState extends State<DesktopHomePage>
   }
 
   Widget buildHelpCards(String updateUrl) {
-    if (!bind.isCustomClient() &&
-        updateUrl.isNotEmpty &&
+    if (updateUrl.isNotEmpty &&
         !isCardClosed) {
       final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
       String btnText = isToUpdate ? 'Update' : 'Download';
+      // updateUrl은 GitHub Release html_url (예: .../releases/tag/v1.4.7)
+      // releases 페이지 URL은 /tag/ 이전까지
+      final releasesBaseUrl = updateUrl.contains('/tag/')
+          ? updateUrl.substring(0, updateUrl.lastIndexOf('/tag/'))
+          : updateUrl;
       GestureTapCallback onPressed = () async {
-        final Uri url = Uri.parse('https://github.com/Hanasis-Platform/hanadesk-community/releases');
+        final Uri url = Uri.parse(releasesBaseUrl);
         await launchUrl(url);
       };
       if (isToUpdate) {
@@ -451,9 +455,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           onPressed,
           closeButton: true,
           help: isToUpdate ? 'Changelog' : null,
-          link: isToUpdate
-              ? 'https://github.com/Hanasis-Platform/hanadesk-community/releases/tag/${bind.mainGetNewVersion()}'
-              : null);
+          link: isToUpdate ? updateUrl : null);
     }
     if (systemError.isNotEmpty) {
       return buildInstallCard("", systemError, "", () {});
