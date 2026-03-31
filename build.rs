@@ -89,13 +89,20 @@ fn install_android_deps() {
 
 /// .build.env 파일을 파싱하여 각 KEY=VALUE를 cargo:rustc-env로 전달한다.
 /// Rust 소스에서 env!("KEY") 매크로로 컴파일 시점에 참조 가능.
+///
+/// 환경 변수 BUILD_ENV_FILE이 설정되어 있으면 해당 경로의 파일을 사용한다.
+/// 설정되지 않으면 기본값 ../.build.env를 사용한다.
 fn load_build_env() {
-    let env_path = std::path::Path::new("../.build.env");
-    println!("cargo:rerun-if-changed=../.build.env");
+    let default_path = "../.build.env".to_string();
+    let env_file = std::env::var("BUILD_ENV_FILE").unwrap_or(default_path);
+    let env_path = std::path::Path::new(&env_file);
+    println!("cargo:rerun-if-changed={}", env_file);
+    println!("cargo:rerun-if-env-changed=BUILD_ENV_FILE");
     if !env_path.exists() {
         return;
     }
-    let content = std::fs::read_to_string(env_path).expect("Failed to read .build.env");
+    let content = std::fs::read_to_string(env_path)
+        .unwrap_or_else(|e| panic!("Failed to read {}: {}", env_file, e));
     for line in content.lines() {
         let line = line.trim();
         if line.is_empty() || line.starts_with('#') {

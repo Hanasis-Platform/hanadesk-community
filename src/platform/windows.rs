@@ -1708,7 +1708,9 @@ fn get_before_uninstall(kill_self: bool) -> String {
 fn get_uninstall(kill_self: bool, uninstall_printer: bool) -> String {
     let reg_uninstall_string = get_reg("UninstallString");
     if reg_uninstall_string.to_lowercase().contains("msiexec.exe") {
-        return reg_uninstall_string;
+        // 이전 MSI 설치를 사일런트 제거한 후 현재 설치를 진행한다.
+        // /quiet: 사용자 UI 없이 제거, /norestart: 재부팅 억제
+        return format!("{} /quiet /norestart", reg_uninstall_string);
     }
 
     let mut uninstall_cert_cmd = "".to_string();

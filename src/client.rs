@@ -2567,13 +2567,13 @@ impl LoginConfigHandler {
         }
         if config.keyboard_mode.is_empty() {
             if is_keyboard_mode_supported(
-                &KeyboardMode::Map,
+                &KeyboardMode::Legacy,
                 get_version_number(&pi.version),
                 &pi.platform,
             ) {
-                config.keyboard_mode = KeyboardMode::Map.to_string();
-            } else {
                 config.keyboard_mode = KeyboardMode::Legacy.to_string();
+            } else {
+                config.keyboard_mode = KeyboardMode::Map.to_string();
             }
         } else {
             let keyboard_modes =

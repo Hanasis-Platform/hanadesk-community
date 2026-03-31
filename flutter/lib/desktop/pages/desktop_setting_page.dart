@@ -2402,7 +2402,7 @@ class _AboutState extends State<_About> {
                   children: [
                     Expanded(
                       child: Text(
-                            'Copyright © ${DateTime.now().toString().substring(0, 4)} Hanasis Co., Ltd.\n$license',
+                            'Copyright © ${DateTime.now().toString().substring(0, 4)} Hanasis Co., Ltd.\nBased on RustDesk © Purslane Ltd.\nLicensed under AGPL-3.0\n$license',
                             style: const TextStyle(color: Colors.white),
                           ),
                     ),

@@ -59,6 +59,10 @@ flutter/lib/generated_plugin_registrant.dart
 libsciter.dylib
 flutter/web/
 
+# 빌드 자동화 스크립트 (로컬 환경 전용)
+build.bat
+build-*.bat
+
 # 서드파티 라이브러리 IDE 설정
 libs/**/.vscode/
 

@@ -268,14 +268,14 @@ impl<T: InvokeUiSession> Session<T> {
         let platform = self.peer_platform();
 
         let supported_modes = get_supported_keyboard_modes(peer_version, &platform);
+        // Legacy 모드를 기본값으로 우선 사용
+        if supported_modes.contains(&KeyboardMode::Legacy) {
+            return KeyboardMode::Legacy.to_string();
+        }
         if let Some(mode) = supported_modes.first() {
             return mode.to_string();
         } else {
-            if self.get_peer_version() >= get_version_number("1.2.0") {
-                return KeyboardMode::Map.to_string();
-            } else {
-                return KeyboardMode::Legacy.to_string();
-            }
+            return KeyboardMode::Legacy.to_string();
         }
     }
 

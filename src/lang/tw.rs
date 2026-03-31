@@ -740,5 +740,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("keep-awake-during-incoming-sessions-label", "在連入工作階段期間保持螢幕喚醒"),
         ("Continue with {}", "使用 {} 登入"),
         ("Display Name", ""),
+        ("edition-client", "用戶端"),
+        ("edition-support", "技術支援"),
+        ("edition-standard", "標準版"),
     ].iter().cloned().collect();
 }

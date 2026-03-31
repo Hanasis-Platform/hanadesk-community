@@ -2956,23 +2956,36 @@ int versionCmp(String v1, String v2) {
   return bind.versionToNumber(v: v1) - bind.versionToNumber(v: v2);
 }
 
-String getWindowName({WindowType? overrideType}) {
+String _getEditionLabel() {
+  if (bind.isIncomingOnly()) return translate('edition-client');
+  if (bind.isOutgoingOnly()) return translate('edition-support');
+  return translate('edition-standard');
+}
+
+String getAppTitleWithVersion() {
   final name = bind.mainGetAppNameSync();
+  final edition = _getEditionLabel();
+  final ver = version.isNotEmpty ? ' v$version' : '';
+  return '$name $edition$ver';
+}
+
+String getWindowName({WindowType? overrideType}) {
+  final title = getAppTitleWithVersion();
   switch (overrideType ?? kWindowType) {
     case WindowType.Main:
-      return name;
+      return title;
     case WindowType.FileTransfer:
-      return "File Transfer - $name";
+      return "File Transfer - $title";
     case WindowType.ViewCamera:
-      return "View Camera - $name";
+      return "View Camera - $title";
     case WindowType.PortForward:
-      return "Port Forward - $name";
+      return "Port Forward - $title";
     case WindowType.RemoteDesktop:
-      return "Remote Desktop - $name";
+      return "Remote Desktop - $title";
     default:
       break;
   }
-  return name;
+  return title;
 }
 
 String getWindowNameWithId(String id, {WindowType? overrideType}) {

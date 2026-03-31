@@ -167,7 +167,18 @@ void showServerSettingsWithValue(
   final idCtrl = TextEditingController(text: serverConfig.idServer);
   final relayCtrl = TextEditingController(text: serverConfig.relayServer);
   final apiCtrl = TextEditingController(text: serverConfig.apiServer);
-  final keyCtrl = TextEditingController(text: serverConfig.key);
+  // Key 필드: 기존 값이 있으면 마스킹 표시, 새로 입력한 경우에만 저장
+  final originalKey = serverConfig.key;
+  final maskedKey = originalKey.length > 6
+      ? '${originalKey.substring(0, 3)}${'*' * (originalKey.length - 6)}${originalKey.substring(originalKey.length - 3)}'
+      : (originalKey.isNotEmpty ? '*' * originalKey.length : '');
+  final keyCtrl = TextEditingController(text: maskedKey);
+  var keyModified = false;
+  keyCtrl.addListener(() {
+    if (keyCtrl.text != maskedKey) {
+      keyModified = true;
+    }
+  });
 
   RxString idServerMsg = ''.obs;
   RxString relayServerMsg = ''.obs;
@@ -185,6 +196,8 @@ void showServerSettingsWithValue(
       setState(() {
         isInProgress = true;
       });
+      // Key가 수정되지 않았으면 원본 값 유지
+      final effectiveKey = keyModified ? keyCtrl.text.trim() : originalKey;
       bool ret = await setServerConfig(
           null,
           errMsgs,
@@ -192,7 +205,7 @@ void showServerSettingsWithValue(
               idServer: idCtrl.text.trim(),
               relayServer: relayCtrl.text.trim(),
               apiServer: apiCtrl.text.trim(),
-              key: keyCtrl.text.trim()));
+              key: effectiveKey));
       setState(() {
         isInProgress = false;
       });
@@ -237,12 +250,7 @@ void showServerSettingsWithValue(
     }
 
     return CustomAlertDialog(
-      title: Row(
-        children: [
-          Expanded(child: Text(translate('ID/Relay Server'))),
-          ...ServerConfigImportExportWidgets(controllers, errMsgs),
-        ],
-      ),
+      title: Text(translate('ID/Relay Server')),
       content: ConstrainedBox(
         constraints: const BoxConstraints(minWidth: 500),
         child: Form(
@@ -272,7 +280,15 @@ void showServerSettingsWithValue(
                     },
                   ),
                   SizedBox(height: 8),
-                  buildField('Key', keyCtrl, ''),
+                  Focus(
+                    onFocusChange: (hasFocus) {
+                      if (hasFocus && !keyModified) {
+                        keyCtrl.clear();
+                        keyModified = true;
+                      }
+                    },
+                    child: buildField('Key', keyCtrl, ''),
+                  ),
                   if (isInProgress)
                     Padding(
                       padding: EdgeInsets.only(top: 8),

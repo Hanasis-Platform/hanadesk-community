@@ -740,5 +740,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("keep-awake-during-incoming-sessions-label", "수신 세션 중 화면 켜짐 유지"),
         ("Continue with {}", "{}(으)로 계속"),
         ("Display Name", "표시 이름"),
+        ("edition-client", "클라이언트"),
+        ("edition-support", "서포트"),
+        ("edition-standard", "스탠다드"),
     ].iter().cloned().collect();
 }
