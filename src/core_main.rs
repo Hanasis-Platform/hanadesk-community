@@ -34,6 +34,7 @@ pub fn core_main() -> Option<Vec<String>> {
     }
     crate::load_custom_client();
     crate::common::apply_build_mode();
+    crate::ui_interface::refresh_options();
     #[cfg(windows)]
     if !crate::platform::windows::bootstrap() {
         // return None to terminate the process

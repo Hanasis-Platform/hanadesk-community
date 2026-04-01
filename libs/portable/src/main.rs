@@ -79,12 +79,15 @@ fn setup(
     };
 
     let mut ts = 0;
-    if clear || !is_timestamp_matches(&dir, &mut ts) {
+    // clear=true (인스톨러 실행) 시 타임스탬프와 무관하게 항상 재설치
+    if clear {
         #[cfg(windows)]
         if _args.is_empty() {
             *_ui = true;
             ui::setup();
         }
+        std::fs::remove_dir_all(&dir).ok();
+    } else if !is_timestamp_matches(&dir, &mut ts) {
         std::fs::remove_dir_all(&dir).ok();
     }
     for file in reader.files.iter() {
@@ -194,6 +197,7 @@ fn main() {
 
     let mut ui = false;
     let reader = BinaryReader::default();
+    // click_setup(인스톨러 더블클릭) 시 항상 clear=true로 새로 설치
     if let Some(exe) = setup(
         reader,
         None,
