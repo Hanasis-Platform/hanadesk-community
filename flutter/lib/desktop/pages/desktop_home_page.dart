@@ -851,6 +851,12 @@ class _DesktopHomePageState extends State<DesktopHomePage>
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _updateWindowSize();
       });
+      // updateUrl이 비동기적으로 설정될 때 창 크기를 재조정
+      ever(stateGlobal.updateUrl, (_) {
+        Future.delayed(Duration(milliseconds: 500), () {
+          _updateWindowSize();
+        });
+      });
     }
     WidgetsBinding.instance.addObserver(this);
   }
