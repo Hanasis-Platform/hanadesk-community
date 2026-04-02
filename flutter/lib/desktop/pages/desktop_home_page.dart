@@ -324,15 +324,16 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
                     children: [
-                      AutoSizeText(
+                      Text(
                         translate("One-time Password"),
                         style: TextStyle(
                             fontSize: 14, color: textColor?.withOpacity(0.5)),
-                        maxLines: 1,
                       ),
-                      SizedBox(width: 8),
                       GestureDetector(
                         onTap: () {
                           if (showOneTime) {
