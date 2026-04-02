@@ -434,13 +434,9 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         !isCardClosed) {
       final isToUpdate = (isWindows || isMacOS) && bind.mainIsInstalled();
       String btnText = isToUpdate ? 'Update' : 'Download';
-      // updateUrl은 GitHub Release html_url (예: .../releases/tag/v1.4.7)
-      // releases 페이지 URL은 /tag/ 이전까지
-      final releasesBaseUrl = updateUrl.contains('/tag/')
-          ? updateUrl.substring(0, updateUrl.lastIndexOf('/tag/'))
-          : updateUrl;
+      // updateUrl = R2 다운로드 base URL (예: https://cdn.hanaesp.com/installer/HanaDesk/1.4.7/)
       GestureTapCallback onPressed = () async {
-        final Uri url = Uri.parse(releasesBaseUrl);
+        final Uri url = Uri.parse(updateUrl);
         await launchUrl(url);
       };
       if (isToUpdate) {
@@ -453,9 +449,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
           "${translate("new-version-of-{${bind.mainGetAppNameSync()}}-tip")} (${bind.mainGetNewVersion()}).",
           btnText,
           onPressed,
-          closeButton: true,
-          help: isToUpdate ? 'Changelog' : null,
-          link: isToUpdate ? updateUrl : null);
+          closeButton: true);
     }
     if (systemError.isNotEmpty) {
       return buildInstallCard("", systemError, "", () {});

@@ -9,21 +9,21 @@ import 'package:url_launcher/url_launcher.dart';
 
 final _isExtracting = false.obs;
 
-void handleUpdate(String releasePageUrl) {
+void handleUpdate(String updateBaseUrl) {
   _isExtracting.value = false;
-  String downloadUrl = releasePageUrl.replaceAll('tag', 'download');
-  // tag에서 버전 추출 (v1.4.7 → 1.4.7, 파일명에 v 접두사 없음)
-  String version = downloadUrl.substring(downloadUrl.lastIndexOf('/') + 1);
-  String fileVersion = version.startsWith('v') ? version.substring(1) : version;
+  // updateBaseUrl = R2 다운로드 base URL (예: https://cdn.hanaesp.com/installer/HanaDesk/1.4.7/)
+  String downloadBase = updateBaseUrl.endsWith('/') ? updateBaseUrl.substring(0, updateBaseUrl.length - 1) : updateBaseUrl;
+  // URL 마지막 path segment에서 버전 추출
+  String version = downloadBase.substring(downloadBase.lastIndexOf('/') + 1);
   final String downloadFile =
       bind.mainGetCommonSync(key: 'download-file-$version');
   if (downloadFile.startsWith('error:')) {
     final error = downloadFile.replaceFirst('error:', '');
     msgBox(gFFI.sessionId, 'custom-nocancel-nook-hasclose', 'Error', error,
-        releasePageUrl, gFFI.dialogManager);
+        updateBaseUrl, gFFI.dialogManager);
     return;
   }
-  downloadUrl = '$downloadUrl/$downloadFile';
+  String downloadUrl = '$downloadBase/$downloadFile';
 
   SimpleWrapper downloadId = SimpleWrapper('');
   SimpleWrapper<VoidCallback> onCanceled = SimpleWrapper(() {});
@@ -34,7 +34,7 @@ void handleUpdate(String releasePageUrl) {
             ? 'Preparing for installation ...'
             : 'Downloading {$appName}'))),
         content:
-            UpdateProgress(releasePageUrl, downloadUrl, downloadId, onCanceled)
+            UpdateProgress(updateBaseUrl, downloadUrl, downloadId, onCanceled)
                 .marginSymmetric(horizontal: 8)
                 .paddingOnly(top: 12),
         actions: [
@@ -59,12 +59,12 @@ void handleUpdate(String releasePageUrl) {
 }
 
 class UpdateProgress extends StatefulWidget {
-  final String releasePageUrl;
+  final String updateBaseUrl;
   final String downloadUrl;
   final SimpleWrapper downloadId;
   final SimpleWrapper onCanceled;
   UpdateProgress(
-      this.releasePageUrl, this.downloadUrl, this.downloadId, this.onCanceled,
+      this.updateBaseUrl, this.downloadUrl, this.downloadId, this.onCanceled,
       {Key? key})
       : super(key: key);
 
@@ -147,13 +147,13 @@ class UpdateProgressState extends State<UpdateProgress> {
     }
 
     jumplink() {
-      launchUrl(Uri.parse(widget.releasePageUrl));
+      launchUrl(Uri.parse(widget.updateBaseUrl));
       dialogManager.dismissAll();
     }
 
     retry() {
       dialogManager.dismissAll();
-      handleUpdate(widget.releasePageUrl);
+      handleUpdate(widget.updateBaseUrl);
     }
 
     final List<Widget> buttons = [

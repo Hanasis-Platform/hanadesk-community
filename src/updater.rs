@@ -132,9 +132,10 @@ fn check_update(manually: bool) -> ResultType<()> {
     if update_url.is_empty() {
         log::debug!("No update available.");
     } else {
-        // update_url is GitHub html_url: .../releases/tag/v1.4.7
-        let version = update_url.rsplit('/').next().unwrap_or_default().trim_start_matches('v');
-        let download_base = update_url.replace("/tag/", "/download/");
+        // update_url = R2 다운로드 base URL (예: https://cdn.hanaesp.com/installer/HanaDesk/1.4.7/)
+        let download_base = update_url.trim_end_matches('/');
+        // URL 마지막 path segment에서 새 버전 추출
+        let new_version = download_base.rsplit('/').next().unwrap_or_default();
         #[cfg(target_os = "windows")]
         let download_url = {
             // 에디션별 인스톨러 파일명 결정
@@ -145,18 +146,13 @@ fn check_update(manually: bool) -> ResultType<()> {
             #[cfg(not(any(feature = "client-mode", feature = "support-mode")))]
             let edition = "";
 
-            let edition_suffix = if edition.is_empty() {
-                "".to_owned()
-            } else {
-                edition.to_owned()
-            };
             let ext = if update_msi { "msi" } else { "exe" };
             format!(
                 "{}/HanaDeskCommunity{}-{}-install.{}",
-                download_base, edition_suffix, version, ext
+                download_base, edition, new_version, ext
             )
         };
-        log::debug!("New version available: {}", &version);
+        log::debug!("New version available: {}", &new_version);
         let client = create_http_client_with_url(&download_url);
         let Some(file_path) = get_download_file_from_url(&download_url) else {
             bail!("Failed to get the file path from the URL: {}", download_url);
@@ -201,7 +197,7 @@ fn check_update(manually: bool) -> ResultType<()> {
         // before the download, but not empty after the download.
         if has_no_active_conns() {
             #[cfg(target_os = "windows")]
-            update_new_version(update_msi, &version, &file_path);
+            update_new_version(update_msi, &new_version, &file_path);
         }
     }
     Ok(())

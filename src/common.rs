@@ -980,7 +980,7 @@ pub fn check_software_update() {
     }
 }
 
-/// Check for software updates via GitHub Releases API.
+/// Check for software updates via Cloudflare R2 latest.json.
 #[tokio::main(flavor = "current_thread")]
 pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
     let url = env!("UPDATE_URL");
@@ -990,10 +990,9 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
     let is_tls_not_cached = tls_type.is_none();
     let tls_type = tls_type.unwrap_or(TlsType::Rustls);
     let client = create_http_client_async(tls_type, false);
-    let latest_release_response = match client
+    let response = match client
         .get(url)
         .header("User-Agent", "HanaDeskCommunity")
-        .header("Accept", "application/vnd.github+json")
         .send()
         .await
     {
@@ -1008,7 +1007,6 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
                 let resp = client
                     .get(url)
                     .header("User-Agent", "HanaDeskCommunity")
-                    .header("Accept", "application/vnd.github+json")
                     .send()
                     .await?;
                 upsert_tls_cache(tls_url, tls_type, false);
@@ -1018,22 +1016,23 @@ pub async fn do_check_software_update() -> hbb_common::ResultType<()> {
             }
         }
     };
-    let bytes = latest_release_response.bytes().await?;
-    let release: hbb_common::GitHubRelease = serde_json::from_slice(&bytes)?;
-    let latest_version = release.tag_name.trim_start_matches('v');
-    let response_url = release.html_url;
+    let bytes = response.bytes().await?;
+    let update_info: hbb_common::UpdateInfo = serde_json::from_slice(&bytes)?;
+    let latest_version = update_info.version.trim_start_matches('v');
 
     if get_version_number(latest_version) > get_version_number(crate::VERSION) {
+        // url = 다운로드 base URL (예: https://cdn.hanaesp.com/installer/HanaDesk/1.4.7/)
+        let download_url = update_info.url.clone();
         #[cfg(feature = "flutter")]
         {
             let mut m = HashMap::new();
             m.insert("name", "check_software_update_finish");
-            m.insert("url", &response_url);
+            m.insert("url", &download_url);
             if let Ok(data) = serde_json::to_string(&m) {
                 let _ = crate::flutter::push_global_event(crate::flutter::APP_TYPE_MAIN, data);
             }
         }
-        *SOFTWARE_UPDATE_URL.lock().unwrap() = response_url;
+        *SOFTWARE_UPDATE_URL.lock().unwrap() = download_url;
     } else {
         *SOFTWARE_UPDATE_URL.lock().unwrap() = "".to_string();
     }

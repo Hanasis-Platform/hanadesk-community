@@ -712,13 +712,11 @@ pub fn current_is_wayland() -> bool {
 
 #[inline]
 pub fn get_new_version() -> String {
-    (*SOFTWARE_UPDATE_URL
-        .lock()
-        .unwrap()
-        .rsplit('/')
-        .next()
-        .unwrap_or(""))
-    .to_string()
+    let url = SOFTWARE_UPDATE_URL.lock().unwrap().clone();
+    // R2 URL: https://cdn.hanaesp.com/installer/HanaDesk/1.4.7/
+    // 末尾の/を除去してからバージョンを取得
+    let url = url.trim_end_matches('/');
+    url.rsplit('/').next().unwrap_or("").to_string()
 }
 
 #[inline]
