@@ -184,6 +184,51 @@ pub fn get_key_state(key: enigo::Key) -> bool {
 impl Client {
     const CLIENT_CLIPBOARD_NAME: &'static str = "client-clipboard";
 
+    /// 같은 LAN 연결 시, local_addrs 중에서 자신과 같은 서브넷의 주소를 선택한다.
+    /// 같은 서브넷의 주소가 없으면 기본 socket_addr(서버가 전달한 사설 IP)을 사용한다.
+    fn select_best_local_addr(default_addr: &[u8], local_addrs: &[bytes::Bytes]) -> SocketAddr {
+        let default = AddrMangle::decode(default_addr);
+        let candidates: Vec<SocketAddr> = local_addrs
+            .iter()
+            .map(|a| AddrMangle::decode(a))
+            .collect();
+
+        log::info!("Selecting best local addr from {} candidates, default={}", candidates.len(), default);
+
+        // 자신의 로컬 인터페이스 IP 수집
+        if let Ok(ifaces) = default_net::get_interfaces() {
+            for iface in &ifaces {
+                for ipv4 in &iface.ipv4 {
+                    let my_ip = ipv4.addr;
+                    if my_ip.is_loopback() || !my_ip.is_private() {
+                        continue;
+                    }
+                    // 각 후보와 서브넷 매칭 (/24 기준)
+                    let my_prefix = my_ip.octets();
+                    for candidate in &candidates {
+                        if let std::net::IpAddr::V4(cand_ip) = candidate.ip() {
+                            let cand_prefix = cand_ip.octets();
+                            // /24 서브넷 비교 (첫 3바이트)
+                            if my_prefix[0] == cand_prefix[0]
+                                && my_prefix[1] == cand_prefix[1]
+                                && my_prefix[2] == cand_prefix[2]
+                            {
+                                log::info!(
+                                    "Found matching subnet: my={}, peer={} (iface={})",
+                                    my_ip, candidate, iface.name
+                                );
+                                return *candidate;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        log::info!("No matching subnet found, using default: {}", default);
+        default
+    }
+
     /// Start a new connection.
     pub async fn start(
         peer: &str,
@@ -505,7 +550,12 @@ impl Client {
                             is_local = ph.is_local();
                             signed_id_pk = ph.pk.into();
                             relay_server = ph.relay_server;
-                            peer_addr = AddrMangle::decode(&ph.socket_addr);
+                            // 같은 LAN인 경우, local_addrs에서 같은 서브넷의 IP를 선택
+                            peer_addr = if is_local && !ph.local_addrs.is_empty() {
+                                Self::select_best_local_addr(&ph.socket_addr, &ph.local_addrs)
+                            } else {
+                                AddrMangle::decode(&ph.socket_addr)
+                            };
                             feedback = ph.feedback;
                             let s = udp.0.take();
                             if ph.is_udp && s.is_some() {

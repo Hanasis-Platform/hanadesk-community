@@ -543,14 +543,22 @@ impl RendezvousMediator {
         log::debug!("Handle intranet from {:?}", peer_addr);
         let mut socket = connect_tcp(&*self.host, CONNECT_TIMEOUT).await?;
         let local_addr = socket.local_addr();
-        // we saw invalid local_addr while using proxy, local_addr.ip() == "::1"
         let local_addr: SocketAddr =
             format!("{}:{}", local_addr.ip(), local_addr.port()).parse()?;
+
+        // 모든 사설 IP를 수집하여 local_addrs에 포함
+        let local_addrs = Self::collect_local_addrs();
+        log::info!(
+            "Intranet local_addr={:?}, local_addrs={:?} for peer {:?}",
+            local_addr, local_addrs.len(), peer_addr
+        );
+
         let mut msg_out = Message::new();
         msg_out.set_local_addr(LocalAddr {
             id: Config::get_id(),
             socket_addr: AddrMangle::encode(peer_addr).into(),
             local_addr: AddrMangle::encode(local_addr).into(),
+            local_addrs: local_addrs.into_iter().map(|a| AddrMangle::encode(a).into()).collect(),
             relay_server,
             version: crate::VERSION.to_owned(),
             socket_addr_v6,
@@ -567,6 +575,26 @@ impl RendezvousMediator {
         )
         .await;
         Ok(())
+    }
+
+    /// 모든 로컬 네트워크 인터페이스에서 사설 IPv4 주소를 수집한다.
+    /// 직접 IP 접근 포트(21118)를 포트로 사용한다.
+    fn collect_local_addrs() -> Vec<SocketAddr> {
+        let direct_port = get_direct_port() as u16;
+        let mut addrs = Vec::new();
+        if let Ok(ifaces) = default_net::get_interfaces() {
+            for iface in &ifaces {
+                for ipv4 in &iface.ipv4 {
+                    let ip = ipv4.addr;
+                    if !ip.is_loopback() && ip.is_private() {
+                        let addr = SocketAddr::new(std::net::IpAddr::V4(ip), direct_port);
+                        log::debug!("Collected local addr: {} ({})", addr, iface.name);
+                        addrs.push(addr);
+                    }
+                }
+            }
+        }
+        addrs
     }
 
     async fn handle_punch_hole(&self, ph: PunchHole, server: ServerPtr) -> ResultType<()> {
