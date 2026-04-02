@@ -404,6 +404,24 @@ class _RemoteToolbarState extends State<RemoteToolbar> {
       toolbarItems.add(_VoiceCallMenu(id: widget.id, ffi: widget.ffi));
     }
     if (!isWeb) toolbarItems.add(_RecordMenu());
+    // 연결 상태 표시 (Direct / Relay)
+    toolbarItems.add(Obx(() {
+      final connType = ConnectionTypeState.find(widget.id);
+      if (!connType.isValid()) return Offstage();
+      final isDirect = connType.direct.value == ConnectionType.strDirect;
+      return Container(
+        margin: EdgeInsets.symmetric(horizontal: 4),
+        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: isDirect ? Colors.green : Colors.orange,
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(
+          isDirect ? translate('Direct') : translate('Relay'),
+          style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+        ),
+      );
+    }));
     toolbarItems.add(_CloseMenu(id: widget.id, ffi: widget.ffi));
     final toolbarBorderRadius = BorderRadius.all(Radius.circular(4.0));
     return Column(

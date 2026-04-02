@@ -146,6 +146,11 @@ pub fn apply_build_mode() {
         overwrite.insert("relay-server".to_owned(), env!("RELAY_SERVER").to_owned());
         overwrite.insert("key".to_owned(), env!("SERVER_KEY").to_owned());
         drop(overwrite);
+
+        // 직접 IP 접근을 기본 활성화 (사용자가 명시적으로 비활성화하지 않은 경우)
+        if config::Config::get_option("direct-server").is_empty() {
+            config::Config::set_option("direct-server".to_owned(), "Y".to_owned());
+        }
     }
 
     #[cfg(feature = "client-mode")]

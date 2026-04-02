@@ -746,5 +746,7 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("show-password", "显示"),
         ("otp-enabled", "使用"),
         ("otp-disabled", "不使用"),
+        ("Direct", "直连"),
+        ("Relay", "中继"),
     ].iter().cloned().collect();
 }
