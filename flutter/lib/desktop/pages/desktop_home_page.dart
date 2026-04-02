@@ -290,6 +290,17 @@ class _DesktopHomePageState extends State<DesktopHomePage>
         ));
   }
 
+  final RxBool _passwordVisible = false.obs;
+  Timer? _passwordVisibleTimer;
+
+  void _showPasswordTemporarily() {
+    _passwordVisible.value = true;
+    _passwordVisibleTimer?.cancel();
+    _passwordVisibleTimer = Timer(Duration(seconds: 30), () {
+      _passwordVisible.value = false;
+    });
+  }
+
   buildPasswordBoard2(BuildContext context, ServerModel model) {
     RxBool refreshHover = false.obs;
     RxBool editHover = false.obs;
@@ -313,11 +324,44 @@ class _DesktopHomePageState extends State<DesktopHomePage>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AutoSizeText(
-                    translate("One-time Password"),
-                    style: TextStyle(
-                        fontSize: 14, color: textColor?.withOpacity(0.5)),
-                    maxLines: 1,
+                  Row(
+                    children: [
+                      AutoSizeText(
+                        translate("One-time Password"),
+                        style: TextStyle(
+                            fontSize: 14, color: textColor?.withOpacity(0.5)),
+                        maxLines: 1,
+                      ),
+                      SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () {
+                          if (showOneTime) {
+                            // ON → OFF: 일회용 비활성화
+                            model.setVerificationMethod(kUsePermanentPassword);
+                          } else {
+                            // OFF → ON: 일회용 활성화
+                            model.setVerificationMethod(kUseBothPasswords);
+                          }
+                          model.updatePasswordModel();
+                        },
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: showOneTime ? MyTheme.accent : Colors.grey,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            showOneTime
+                                ? translate('otp-enabled')
+                                : translate('otp-disabled'),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   Row(
                     children: [
@@ -330,18 +374,40 @@ class _DesktopHomePageState extends State<DesktopHomePage>
                               showToast(translate("Copied"));
                             }
                           },
-                          child: TextFormField(
-                            controller: model.serverPasswd,
-                            readOnly: true,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              contentPadding:
-                                  EdgeInsets.only(top: 14, bottom: 10),
-                            ),
-                            style: TextStyle(fontSize: 15),
-                          ).workaroundFreezeLinuxMint(),
+                          child: Obx(() => showOneTime && !_passwordVisible.value
+                            ? Text(
+                                '••••••••',
+                                style: TextStyle(fontSize: 15, height: 2.2),
+                              )
+                            : TextFormField(
+                                controller: model.serverPasswd,
+                                readOnly: true,
+                                decoration: InputDecoration(
+                                  border: InputBorder.none,
+                                  contentPadding:
+                                      EdgeInsets.only(top: 14, bottom: 10),
+                                ),
+                                style: TextStyle(fontSize: 15),
+                              ).workaroundFreezeLinuxMint(),
+                          ),
                         ),
                       ),
+                      if (showOneTime)
+                        Obx(() => !_passwordVisible.value
+                          ? TextButton(
+                              onPressed: _showPasswordTemporarily,
+                              style: TextButton.styleFrom(
+                                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: Text(
+                                translate('show-password'),
+                                style: TextStyle(fontSize: 12),
+                              ),
+                            ).marginOnly(right: 4, top: 4)
+                          : SizedBox.shrink(),
+                        ),
                       if (showOneTime)
                         AnimatedRotationWidget(
                           onPressed: () => bind.mainUpdateTemporaryPassword(),
@@ -880,6 +946,7 @@ class _DesktopHomePageState extends State<DesktopHomePage>
     _uniLinksSubscription?.cancel();
     Get.delete<RxBool>(tag: 'stop-service');
     _updateTimer?.cancel();
+    _passwordVisibleTimer?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }

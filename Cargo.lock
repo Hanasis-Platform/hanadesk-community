@@ -3678,7 +3678,7 @@ dependencies = [
 
 [[package]]
 name = "hanadesk"
-version = "1.4.6"
+version = "1.4.7"
 dependencies = [
  "android-wakelock",
  "android_logger",

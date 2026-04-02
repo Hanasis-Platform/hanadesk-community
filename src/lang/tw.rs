@@ -743,5 +743,8 @@ pub static ref T: std::collections::HashMap<&'static str, &'static str> =
         ("edition-client", "用戶端"),
         ("edition-support", "技術支援"),
         ("edition-standard", "標準版"),
+        ("show-password", "顯示"),
+        ("otp-enabled", "使用"),
+        ("otp-disabled", "不使用"),
     ].iter().cloned().collect();
 }
